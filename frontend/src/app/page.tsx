@@ -89,7 +89,7 @@ export default function Home() {
         {/* World heatmap – bottom-left corner */}
         <section className="absolute left-[min(3.5vw,40px)] top-[400px]">
           <Link 
-            href="#" 
+            href="/heatmap" 
             id="world-heatmap"
             className="block w-[150px] aspect-square group relative"
           >

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       analysis: completion.choices[0].message?.content,
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Analysis error:", err);
     return NextResponse.json({ error: "Failed to analyze flow" }, { status: 500 });
   }

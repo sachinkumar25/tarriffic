@@ -109,6 +109,13 @@ export default function MapboxGlobe({
         .then(data => {
           if (!mapRef.current) return
 
+          // Check if we have valid data
+          if (!data.lines.features.length && !data.arrows.features.length) {
+            console.warn('No tariff data available')
+            setLoading(false)
+            return
+          }
+
           if (!map.getSource('tariffs-lines')) {
             map.addSource('tariffs-lines', {
               type: 'geojson',

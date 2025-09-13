@@ -57,8 +57,12 @@ const calculateBearing = (
 }
 
 export const generateTariffGeoJSON = async () => {
-  const res = await fetch('/expanded_summary.csv')
-  const text = await res.text()
+  try {
+    const res = await fetch('/expanded_summary.csv')
+    if (!res.ok) {
+      throw new Error(`Failed to fetch CSV: ${res.status} ${res.statusText}`)
+    }
+    const text = await res.text()
 
   const allRows = Papa.parse<ExpandedSummaryRow>(text, {
     header: true,
@@ -159,5 +163,18 @@ export const generateTariffGeoJSON = async () => {
       type: 'FeatureCollection' as const,
       features: arrowFeatures,
     },
+  }
+  } catch (error) {
+    console.error('Error generating tariff GeoJSON:', error)
+    return {
+      lines: {
+        type: 'FeatureCollection' as const,
+        features: [],
+      },
+      arrows: {
+        type: 'FeatureCollection' as const,
+        features: [],
+      },
+    }
   }
 }
