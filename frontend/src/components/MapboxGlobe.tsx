@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { generateTariffGeoJSON } from '@/lib/tradeData'
+import { generateTariffGeoJSON, getAllCountries } from '@/lib/tradeData'
+import CountryFilter from './CountryFilter'
+import { Filter } from 'lucide-react'
 
 interface FlowData {
   reporter: string;
@@ -31,6 +33,84 @@ export default function MapboxGlobe({
   const [analysis, setAnalysis] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [showDrawer, setShowDrawer] = useState(false)
+  
+  // Filter state
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [showFilter, setShowFilter] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+
+  // Function to load map data
+  const loadMapData = useCallback(async (countries?: string[]) => {
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded()) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      const data = await generateTariffGeoJSON(countries)
+
+      // Update or create sources
+      if (map.getSource('tariffs-lines')) {
+        (map.getSource('tariffs-lines') as mapboxgl.GeoJSONSource).setData(data.lines)
+      } else {
+        map.addSource('tariffs-lines', {
+          type: 'geojson',
+          data: data.lines,
+        })
+      }
+      
+      if (map.getSource('tariffs-arrows')) {
+        (map.getSource('tariffs-arrows') as mapboxgl.GeoJSONSource).setData(data.arrows)
+      } else {
+        map.addSource('tariffs-arrows', {
+          type: 'geojson',
+          data: data.arrows,
+        })
+      }
+
+      // Add layers if they don't exist
+      if (!map.getLayer('tariff-lines')) {
+        map.addLayer({
+          id: 'tariff-lines',
+          type: 'line',
+          source: 'tariffs-lines',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-width': 3, // Slightly thicker for easier clicking
+            'line-color': 'black',
+            'line-opacity': 0.8,
+          },
+        })
+      }
+
+      if (!map.getLayer('tariff-arrows')) {
+        map.addLayer({
+          id: 'tariff-arrows',
+          type: 'symbol',
+          source: 'tariffs-arrows',
+          layout: {
+            'text-field': '▲',
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-size': 24,
+            'text-rotate': ['get', 'bearing'],
+            'text-rotation-alignment': 'map',
+            'text-pitch-alignment': 'map',
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+          },
+          paint: {
+            'text-color': 'black',
+          },
+        })
+      }
+
+    } catch (error) {
+      console.error('Error loading map data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   // Function to fetch analysis from API
   const fetchAnalysis = async (flow: FlowData) => {
@@ -53,6 +133,95 @@ export default function MapboxGlobe({
     } finally {
       setIsAnalyzing(false)
     }
+  }
+
+  // Helper function to get user-friendly product category name
+  const getProductCategoryName = (hs4: string) => {
+    // Map of country codes to their major export categories
+    const countryProducts: Record<string, string> = {
+      'BRA': 'Agricultural Products & Raw Materials',
+      'CHN': 'Electronics & Manufacturing',
+      'CAN': 'Energy & Natural Resources', 
+      'MEX': 'Automotive & Manufacturing',
+      'JPN': 'Technology & Vehicles',
+      'DEU': 'Machinery & Automotive',
+      'GBR': 'Financial Services & Manufacturing',
+      'KOR': 'Electronics & Semiconductors',
+      'FRA': 'Luxury Goods & Agriculture',
+      'ITA': 'Fashion & Machinery',
+      'IND': 'Textiles & Pharmaceuticals',
+      'NLD': 'Agricultural Products & Chemicals',
+      'CHE': 'Pharmaceuticals & Precision Instruments',
+      'BEL': 'Chemicals & Diamonds',
+      'ESP': 'Food Products & Machinery',
+    }
+    
+    return countryProducts[hs4] || 'Mixed Trade Goods'
+  }
+
+  // Helper function to get product description
+  const getProductDescription = (hs4: string) => {
+    const descriptions: Record<string, string> = {
+      'BRA': 'Soybeans, coffee, iron ore, and manufactured goods',
+      'CHN': 'Consumer electronics, machinery, and textiles',
+      'CAN': 'Oil, lumber, minerals, and agricultural products',
+      'MEX': 'Vehicles, electronics, and agricultural products',
+      'JPN': 'Cars, electronics, and precision machinery',
+      'DEU': 'Cars, machinery, and chemical products',
+      'GBR': 'Machinery, pharmaceuticals, and financial services',
+      'KOR': 'Semiconductors, cars, and consumer electronics',
+      'FRA': 'Wine, luxury goods, and aerospace products',
+      'ITA': 'Fashion, machinery, and food products',
+      'IND': 'Textiles, pharmaceuticals, and IT services',
+      'NLD': 'Flowers, chemicals, and refined petroleum',
+      'CHE': 'Watches, pharmaceuticals, and precision tools',
+      'BEL': 'Chemicals, diamonds, and petroleum products',
+      'ESP': 'Olive oil, wine, and machinery',
+    }
+    
+    return descriptions[hs4] || 'Various imported and exported goods'
+  }
+
+  // Format analysis text with proper styling
+  const formatAnalysis = (text: string) => {
+    const lines = text.split('\n').filter(line => line.trim())
+    
+    return lines.map((line, index) => {
+      const trimmedLine = line.trim()
+      
+      // Handle bold headers (text between **)
+      if (trimmedLine.includes('**')) {
+        const formattedLine = trimmedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        return (
+          <div 
+            key={index} 
+            className="font-semibold text-white text-base mb-2"
+            dangerouslySetInnerHTML={{ __html: formattedLine }}
+          />
+        )
+      }
+      
+      // Handle bullet points (lines starting with •)
+      if (trimmedLine.startsWith('•')) {
+        return (
+          <div key={index} className="flex items-start space-x-2 ml-2">
+            <span className="text-blue-400 text-sm mt-1">•</span>
+            <span className="text-white/90 text-sm">{trimmedLine.substring(1).trim()}</span>
+          </div>
+        )
+      }
+      
+      // Handle regular paragraphs
+      if (trimmedLine.length > 0) {
+        return (
+          <p key={index} className="text-white/90 text-sm leading-relaxed">
+            {trimmedLine}
+          </p>
+        )
+      }
+      
+      return null
+    }).filter(Boolean)
   }
 
   // Handle flow click
@@ -81,13 +250,17 @@ export default function MapboxGlobe({
     mapRef.current = map
 
     requestAnimationFrame(() => {
-      map.resize()
-      map.triggerRepaint()
+      if (mapRef.current) {
+        mapRef.current.resize()
+        mapRef.current.triggerRepaint()
+      }
     })
 
     map.once('load', () => {
-      map.resize()
-      map.triggerRepaint()
+      if (mapRef.current) {
+        mapRef.current.resize()
+        mapRef.current.triggerRepaint()
+      }
     })
 
     map.on('style.load', () => {
@@ -104,118 +277,185 @@ export default function MapboxGlobe({
         map.getCanvas().style.background = 'transparent'
       }
 
-      setLoading(true)
-      generateTariffGeoJSON()
-        .then(data => {
-          if (!mapRef.current) return
-
-          // Check if we have valid data
-          if (!data.lines.features.length && !data.arrows.features.length) {
-            console.warn('No tariff data available')
-            setLoading(false)
-            return
-          }
-
-          if (!map.getSource('tariffs-lines')) {
-            map.addSource('tariffs-lines', {
-              type: 'geojson',
-              data: data.lines,
-            })
-          }
-          if (!map.getSource('tariffs-arrows')) {
-            map.addSource('tariffs-arrows', {
-              type: 'geojson',
-              data: data.arrows,
-            })
-          }
-
-          if (!map.getLayer('tariff-lines')) {
-            map.addLayer({
-              id: 'tariff-lines',
-              type: 'line',
-              source: 'tariffs-lines',
-              layout: { 'line-cap': 'round', 'line-join': 'round' },
-              paint: {
-                'line-width': 2,
-                'line-color': 'black',
-                'line-opacity': 1,
-              },
-            })
-          }
-          if (map.getLayer('tariff-arrows')) {
-            map.removeLayer('tariff-arrows')
-          }
-
-          map.addLayer({
-            id: 'tariff-arrows',
-            type: 'symbol',
-            source: 'tariffs-arrows',
-            layout: {
-              'text-field': '▲',
-              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-              'text-size': 24,
-              'text-rotate': ['get', 'bearing'],
-              'text-rotation-alignment': 'map',
-              'text-pitch-alignment': 'map',
-              'text-allow-overlap': true,
-              'text-ignore-placement': true,
-            },
-            paint: {
-              'text-color': 'black',
-            },
-          })
-
-          // Add click handler for tariff arrows
-          map.on('click', 'tariff-arrows', (e) => {
-            if (e.features && e.features.length > 0) {
-              const feature = e.features[0]
-              const props = feature.properties
-              if (props) {
-                const flow: FlowData = {
-                  reporter: props.reporter || 'United States',
-                  partner: props.partner || 'Unknown',
-                  product: props.product || 'Unknown Product',
-                  hs4: props.hs4 || '0000',
-                  year: props.year || 2022,
-                  trade_value: props.tradeValue || 0,
-                  tariff_rate: props.tariffRate || 0,
-                  tariff_revenue: props.tariff_revenue || 0,
-                }
-                handleFlowClick(flow)
-              }
-            }
-          })
-
-          // Change cursor on hover
-          map.on('mouseenter', 'tariff-arrows', () => {
-            map.getCanvas().style.cursor = 'pointer'
-          })
-
-          map.on('mouseleave', 'tariff-arrows', () => {
-            map.getCanvas().style.cursor = ''
-          })
-        })
-        .catch(err => {
-          console.error('tariff data error:', err)
-        })
-        .finally(() => {
-          setLoading(false)
-          map.triggerRepaint()
-        })
+      // Trigger data loading once map is ready
+      if (selectedCountries.length > 0) {
+        loadMapData(selectedCountries)
+      }
     })
 
     const ro = new ResizeObserver(() => {
-      map.resize()
-      map.triggerRepaint()
+      if (mapRef.current) {
+        mapRef.current.resize()
+        mapRef.current.triggerRepaint()
+      }
     })
-    ro.observe(mapContainer.current)
+    if (mapContainer.current) {
+      ro.observe(mapContainer.current)
+    }
 
     return () => {
       ro.disconnect()
-      map.remove()
-      mapRef.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
     }
   }, [transparentBackground, handleFlowClick])
+
+  // Initialize with top 15 countries on first load
+  useEffect(() => {
+    const initializeFilter = async () => {
+      if (isInitialLoad) {
+        const allCountries = await getAllCountries()
+        const top15 = allCountries.slice(0, 15).map(c => c.iso)
+        setSelectedCountries(top15)
+        setIsInitialLoad(false)
+        
+        // Fallback: Try to load data after a short delay to ensure map is ready
+        setTimeout(() => {
+          const map = mapRef.current
+          if (map && map.isStyleLoaded() && top15.length > 0) {
+            loadMapData(top15)
+          }
+        }, 1000)
+      }
+    }
+    initializeFilter()
+  }, [isInitialLoad, loadMapData])
+
+  // Reload map data when selected countries change
+  useEffect(() => {
+    if (mapRef.current && mapRef.current.isStyleLoaded()) {
+      loadMapData(selectedCountries)
+    }
+  }, [selectedCountries, loadMapData])
+
+  // Ensure data loads when both map and countries are ready
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || selectedCountries.length === 0) return
+
+    const handleStyleLoad = () => {
+      loadMapData(selectedCountries)
+    }
+
+    if (map.isStyleLoaded()) {
+      handleStyleLoad()
+    } else {
+      map.on('style.load', handleStyleLoad)
+    }
+
+    return () => {
+      if (map) {
+        map.off('style.load', handleStyleLoad)
+      }
+    }
+  }, [selectedCountries, loadMapData])
+
+  // Add click handlers after map is ready
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !map.isStyleLoaded()) return
+
+    const handleRouteClick = (e: mapboxgl.MapMouseEvent) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0]
+        const props = feature.properties
+        if (props) {
+          const flow: FlowData = {
+            reporter: props.reporter || 'United States',
+            partner: props.partner || 'Unknown',
+            product: props.product || 'Unknown Product',
+            hs4: props.hs4 || '',
+            year: props.year || 2022,
+            trade_value: props.tradeValue || 0,
+            tariff_rate: props.tariffRate || 0,
+            tariff_revenue: props.tariff_revenue || 0,
+          }
+          handleFlowClick(flow)
+        }
+      }
+    }
+
+    const handleMouseEnter = () => {
+      const currentMap = mapRef.current
+      if (currentMap) {
+        currentMap.getCanvas().style.cursor = 'pointer'
+      }
+    }
+
+    const handleMouseLeave = () => {
+      const currentMap = mapRef.current
+      if (currentMap) {
+        currentMap.getCanvas().style.cursor = ''
+      }
+    }
+
+    let timeoutId: NodeJS.Timeout | null = null
+    
+    // Wait for the layers to be added, then attach handlers
+    const checkAndAttachHandlers = () => {
+      const currentMap = mapRef.current
+      if (!currentMap || !currentMap.isStyleLoaded()) return
+
+      try {
+        const hasLines = currentMap.getLayer('tariff-lines')
+        const hasArrows = currentMap.getLayer('tariff-arrows')
+        
+        if (hasLines && hasArrows) {
+          // Remove existing handlers
+          currentMap.off('click', 'tariff-lines', handleRouteClick)
+          currentMap.off('click', 'tariff-arrows', handleRouteClick)
+          currentMap.off('mouseenter', 'tariff-lines', handleMouseEnter)
+          currentMap.off('mouseenter', 'tariff-arrows', handleMouseEnter)
+          currentMap.off('mouseleave', 'tariff-lines', handleMouseLeave)
+          currentMap.off('mouseleave', 'tariff-arrows', handleMouseLeave)
+          
+          // Add handlers to both lines and arrows
+          currentMap.on('click', 'tariff-lines', handleRouteClick)
+          currentMap.on('click', 'tariff-arrows', handleRouteClick)
+          currentMap.on('mouseenter', 'tariff-lines', handleMouseEnter)
+          currentMap.on('mouseenter', 'tariff-arrows', handleMouseEnter)
+          currentMap.on('mouseleave', 'tariff-lines', handleMouseLeave)
+          currentMap.on('mouseleave', 'tariff-arrows', handleMouseLeave)
+        } else {
+          // If layers don't exist yet, try again after a short delay
+          timeoutId = setTimeout(checkAndAttachHandlers, 100)
+        }
+      } catch (error) {
+        // Map might be destroyed, ignore the error
+        console.warn('Map layer check failed:', error)
+      }
+    }
+
+    checkAndAttachHandlers()
+
+    return () => {
+      // Clear any pending timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      
+      const currentMap = mapRef.current
+      if (!currentMap) return
+      
+      try {
+        if (currentMap.getLayer && currentMap.getLayer('tariff-lines')) {
+          currentMap.off('click', 'tariff-lines', handleRouteClick)
+          currentMap.off('mouseenter', 'tariff-lines', handleMouseEnter)
+          currentMap.off('mouseleave', 'tariff-lines', handleMouseLeave)
+        }
+        if (currentMap.getLayer && currentMap.getLayer('tariff-arrows')) {
+          currentMap.off('click', 'tariff-arrows', handleRouteClick)
+          currentMap.off('mouseenter', 'tariff-arrows', handleMouseEnter)
+          currentMap.off('mouseleave', 'tariff-arrows', handleMouseLeave)
+        }
+      } catch (error) {
+        // Map might be destroyed, ignore cleanup errors
+        console.warn('Map cleanup failed:', error)
+      }
+    }
+  }, [handleFlowClick, selectedCountries]) // Re-attach when countries change
 
   return (
     <div className="w-full h-full relative">
@@ -224,7 +464,27 @@ export default function MapboxGlobe({
           loading data…
         </div>
       )}
+      
+      {/* Filter Button */}
+      <button
+        onClick={() => setShowFilter(true)}
+        className="absolute top-4 left-4 z-40 bg-gray-900/90 backdrop-blur-sm text-white p-3 rounded-lg border border-gray-600 hover:bg-gray-800/90 transition-all shadow-lg flex items-center gap-2"
+      >
+        <Filter size={18} />
+        <span className="text-sm font-medium">
+          {selectedCountries.length} Countries
+        </span>
+      </button>
+
       <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Country Filter Sidebar */}
+      <CountryFilter
+        selectedCountries={selectedCountries}
+        onCountriesChange={setSelectedCountries}
+        isOpen={showFilter}
+        onClose={() => setShowFilter(false)}
+      />
       
       {/* Side Drawer for Analysis */}
       {showDrawer && selectedFlow && (
@@ -243,29 +503,58 @@ export default function MapboxGlobe({
               </button>
             </div>
 
-            {/* Flow Details */}
-            <div className="space-y-4 mb-6">
-              <div>
-                <span className="text-white/70 text-sm">Product:</span>
-                <p className="text-white font-medium">{selectedFlow.product}</p>
+            {/* Trade Overview */}
+            <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-4 mb-6 border border-white/10">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-400 mb-1">
+                    💰 ${(selectedFlow.trade_value / 1e9).toFixed(1)}B
+                  </div>
+                  <div className="text-white/70 text-sm font-medium">Annual Trade Volume</div>
+                  <div className="text-white/50 text-xs mt-1">
+                    Total value of goods traded each year
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-400 mb-1">
+                    📊 {selectedFlow.tariff_rate.toFixed(1)}%
+                  </div>
+                  <div className="text-white/70 text-sm font-medium">Import Tax Rate</div>
+                  <div className="text-white/50 text-xs mt-1">
+                    {selectedFlow.tariff_rate > 10 ? 'High tax rate' : 
+                     selectedFlow.tariff_rate > 5 ? 'Moderate tax rate' : 'Low tax rate'}
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-white/70 text-sm">Trade Value:</span>
-                <p className="text-white font-medium">${selectedFlow.trade_value.toLocaleString()}</p>
+              
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/70 text-sm">🏛️ Government Revenue:</span>
+                  <span className="text-green-400 font-semibold text-lg">
+                    ${(selectedFlow.tariff_revenue / 1e9).toFixed(2)}B/year
+                  </span>
+                </div>
+                <div className="text-white/50 text-xs mt-1">
+                  Money the U.S. government collects from import taxes
+                </div>
               </div>
-              <div>
-                <span className="text-white/70 text-sm">Tariff Rate:</span>
-                <p className="text-white font-medium">{selectedFlow.tariff_rate}%</p>
-              </div>
-              <div>
-                <span className="text-white/70 text-sm">Estimated Revenue:</span>
-                <p className="text-white font-medium">${selectedFlow.tariff_revenue.toLocaleString()}</p>
+              
+              <div className="mt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/70 text-sm">🏷️ Main Products:</span>
+                  <span className="text-blue-300 font-medium">
+                    {getProductCategoryName(selectedFlow.hs4)}
+                  </span>
+                </div>
+                <div className="text-white/50 text-xs mt-1">
+                  Examples: {getProductDescription(selectedFlow.hs4)}
+                </div>
               </div>
             </div>
 
             {/* Analysis Section */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-3">Macroeconomic Analysis</h3>
+              <h3 className="text-lg font-semibold text-white mb-3">📊 What This Means</h3>
               <div className="bg-white/5 rounded-lg p-4">
                 {isAnalyzing ? (
                   <div className="flex items-center space-x-2 text-white/70">
@@ -273,9 +562,11 @@ export default function MapboxGlobe({
                     <span>Generating analysis...</span>
                   </div>
                 ) : analysis ? (
-                  <p className="text-white/90 leading-relaxed">{analysis}</p>
+                  <div className="text-white/90 leading-relaxed space-y-3">
+                    {formatAnalysis(analysis)}
+                  </div>
                 ) : (
-                  <p className="text-white/70">Click on a tariff arrow to see analysis</p>
+                  <p className="text-white/70">Click on a trade route to see analysis</p>
                 )}
               </div>
             </div>
