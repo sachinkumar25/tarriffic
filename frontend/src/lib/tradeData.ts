@@ -52,7 +52,7 @@ const calculateBearing = (
   const x =
     Math.cos(lat1) * Math.sin(lat2) -
     Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
-  let brng = toDegrees(Math.atan2(y, x))
+  const brng = toDegrees(Math.atan2(y, x))
   return (brng + 360) % 360
 }
 
@@ -76,48 +76,6 @@ export const generateTariffGeoJSON = async () => {
     }
   >()
 
-  const tariffMap = new Map<string, number>();
-  for (const row of tariffData) {
-    tariffMap.set(row.hs4, parseFloat(row.simple_average));
-  }
-
-  const availableHs4Codes = new Set(tariffMap.keys());
-  const features = [];
-
-  // Filter trade data to only include products with available tariff info
-  const relevantTradeData = tradeData.filter(row =>
-    row.PartnerISO3 &&
-    row.PartnerISO3.toLowerCase() !== 'wld' &&
-    availableHs4Codes.has(row.ProductCode.padStart(4, '0'))
-  );
-
-  // Sort by trade value and take top 25
-  const sortedTradeData = relevantTradeData
-    .sort((a, b) => parseFloat(b['TradeValue in 1000 USD']) - parseFloat(a['TradeValue in 1000 USD']))
-    .slice(0, 25);
-
-  for (const row of sortedTradeData) {
-    const tariffRate = tariffMap.get(row.ProductCode.padStart(4, '0'));
-    if (tariffRate !== undefined) {
-      const partnerCoords = await getCountryCoords(row.PartnerISO3);
-      if (partnerCoords) {
-        features.push({
-          type: 'Feature',
-          properties: {
-            tariffRate: tariffRate,
-            tradeValue: parseFloat(row['TradeValue in 1000 USD']) * 1000,
-            partner: row.PartnerName,
-            reporter: 'United States',
-            product: `HS4 ${row.ProductCode.padStart(4, '0')}`,
-            hs4: row.ProductCode.padStart(4, '0'),
-            year: 2022, // Default year, could be made dynamic
-            tariff_revenue: (parseFloat(row['TradeValue in 1000 USD']) * 1000 * tariffRate) / 100,
-          },
-          geometry: {
-            type: 'LineString',
-            coordinates: [partnerCoords, USA_COORDS],
-          },
-        });
   for (const row of allRows) {
     if (row.partner_iso && row.partner_iso.toLowerCase() !== 'wld') {
       const tradeValue = parseFloat(row.trade_value_total)
@@ -160,25 +118,33 @@ export const generateTariffGeoJSON = async () => {
         partnerCoords,
       ]
       lineFeatures.push({
-        type: 'Feature',
+        type: 'Feature' as const,
         properties: {
           tariffRate: data.avgTariff,
           tradeValue: data.totalTradeValue,
           partner: data.partnerName,
         },
         geometry: {
-          type: 'LineString',
+          type: 'LineString' as const,
           coordinates,
         },
       })
       arrowFeatures.push({
-        type: 'Feature',
+        type: 'Feature' as const,
         geometry: {
-          type: 'Point',
+          type: 'Point' as const,
           coordinates: partnerCoords,
         },
         properties: {
           bearing: calculateBearing(USA_COORDS, partnerCoords),
+          tariffRate: data.avgTariff,
+          tradeValue: data.totalTradeValue,
+          partner: data.partnerName,
+          reporter: 'United States',
+          product: `HS4 ${iso}`,
+          hs4: iso,
+          year: 2022,
+          tariff_revenue: (data.totalTradeValue * data.avgTariff) / 100,
         },
       })
     }
@@ -186,11 +152,11 @@ export const generateTariffGeoJSON = async () => {
 
   return {
     lines: {
-      type: 'FeatureCollection',
+      type: 'FeatureCollection' as const,
       features: lineFeatures,
     },
     arrows: {
-      type: 'FeatureCollection',
+      type: 'FeatureCollection' as const,
       features: arrowFeatures,
     },
   }
