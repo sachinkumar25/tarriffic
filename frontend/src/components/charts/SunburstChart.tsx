@@ -97,8 +97,7 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
   const layout = {
     title: 'Hierarchical Trade Data by Sector',
     margin: { l: 0, r: 0, b: 0, t: 40 },
-    width: 1200,
-    height: 800,
+    autosize: true,
     font: {
       family: 'Inter, sans-serif'
     }
