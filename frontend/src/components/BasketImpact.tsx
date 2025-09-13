@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
 
 interface BasketItem {
   id: string;
@@ -83,6 +82,7 @@ const BasketImpact: React.FC = () => {
   const [tariffShift, setTariffShift] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set());
 
   // Calculate total cost whenever tariff shift changes
   useEffect(() => {
@@ -94,13 +94,25 @@ const BasketImpact: React.FC = () => {
     setTotalCost(total);
   }, [tariffShift]);
 
+  // Show items progressively based on tariff shift
+  useEffect(() => {
+    const newVisibleItems = new Set<string>();
+    const itemsToShow = Math.min(Math.floor((tariffShift / 20) * basketItems.length) + 1, basketItems.length);
+    
+    for (let i = 0; i < itemsToShow; i++) {
+      newVisibleItems.add(basketItems[i].id);
+    }
+    
+    setVisibleItems(newVisibleItems);
+  }, [tariffShift]);
+
   // Get color class based on tariff level
   const getTariffColor = (tariff: number) => {
     const adjustedTariff = tariff + tariffShift;
-    if (adjustedTariff < 5) return 'bg-green-100 text-green-800 border-green-200';
-    if (adjustedTariff < 10) return 'bg-yellow-200 text-yellow-800 border-yellow-300';
-    if (adjustedTariff < 15) return 'bg-orange-300 text-orange-800 border-orange-400';
-    return 'bg-red-500 text-white border-red-600';
+    if (adjustedTariff < 5) return 'bg-green-100 text-green-800 border-green-200 shadow-green-200';
+    if (adjustedTariff < 10) return 'bg-yellow-200 text-yellow-800 border-yellow-300 shadow-yellow-300';
+    if (adjustedTariff < 15) return 'bg-orange-300 text-orange-800 border-orange-400 shadow-orange-400';
+    return 'bg-red-500 text-white border-red-600 shadow-red-600';
   };
 
   // Format currency
@@ -138,7 +150,7 @@ const BasketImpact: React.FC = () => {
       <div className="text-center mb-8 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 shadow-lg">
         <div className="text-lg text-gray-700 mb-2 font-medium">Monthly Basket Cost</div>
         <div 
-          className="text-5xl font-bold text-blue-600 transition-all duration-700 ease-out"
+          className="text-4xl font-extrabold text-blue-600 transition-all duration-700 ease-out"
           key={totalCost} // Force re-render for animation
         >
           {formatCurrency(totalCost)}
@@ -157,17 +169,63 @@ const BasketImpact: React.FC = () => {
         </div>
       </div>
 
-      {/* Basket Items */}
-      <div className="relative">
-        {/* Basket Outline */}
-        <div className="absolute inset-0 border-4 border-dashed border-gray-300 rounded-3xl opacity-30"></div>
-        
-        <div className="relative p-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {basketItems.map((item) => {
+      {/* Visual Shopping Basket */}
+      <div className="relative mb-8">
+        {/* Basket SVG */}
+        <div className="relative mx-auto w-80 h-64 flex items-end justify-center">
+          <svg 
+            width="320" 
+            height="240" 
+            viewBox="0 0 320 240" 
+            className="absolute inset-0"
+          >
+            {/* Basket Handle */}
+            <path 
+              d="M 80 60 Q 160 20 240 60" 
+              stroke="#8B5CF6" 
+              strokeWidth="8" 
+              fill="none" 
+              strokeLinecap="round"
+              className="opacity-60"
+            />
+            {/* Basket Body */}
+            <rect 
+              x="60" 
+              y="80" 
+              width="200" 
+              height="140" 
+              rx="10" 
+              ry="10" 
+              fill="none" 
+              stroke="#8B5CF6" 
+              strokeWidth="4" 
+              strokeDasharray="8,4"
+              className="opacity-40"
+            />
+            {/* Basket Bottom */}
+            <rect 
+              x="60" 
+              y="200" 
+              width="200" 
+              height="20" 
+              rx="10" 
+              ry="10" 
+              fill="#F3F4F6" 
+              stroke="#8B5CF6" 
+              strokeWidth="2"
+              className="opacity-60"
+            />
+          </svg>
+          
+          {/* Animated Items in Basket */}
+          <div className="relative w-80 h-64 grid grid-cols-4 gap-2 p-4">
+            {basketItems.map((item, index) => {
               const adjustedTariff = item.tariff + tariffShift;
               const adjustedPrice = getAdjustedPrice(item);
               const colorClass = getTariffColor(item.tariff);
+              const isVisible = visibleItems.has(item.id);
+              const row = Math.floor(index / 4);
+              const col = index % 4;
               
               return (
                 <div
@@ -175,26 +233,36 @@ const BasketImpact: React.FC = () => {
                   className="relative group"
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
+                  style={{
+                    gridRow: row + 1,
+                    gridColumn: col + 1,
+                    transform: `translateY(${isVisible ? '0' : '100px'})`,
+                    opacity: isVisible ? 1 : 0,
+                    transition: 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                    transitionDelay: `${index * 0.1}s`
+                  }}
                 >
                   {/* Item Card */}
-                  <div className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md ${colorClass}`}>
-                    <div className="text-center">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/20 flex items-center justify-center text-2xl">
-                        {item.icon}
-                      </div>
-                      <div className="font-semibold text-sm mb-1">{item.label}</div>
-                      <div className="text-xs opacity-90 font-medium">
-                        {formatCurrency(adjustedPrice)}
-                      </div>
-                      <div className="text-xs mt-1 font-bold">
-                        {adjustedTariff.toFixed(1)}% tariff
-                      </div>
+                  <div className={`w-16 h-16 rounded-xl border-2 transition-all duration-500 hover:scale-110 cursor-pointer shadow-lg ${colorClass} flex flex-col items-center justify-center relative overflow-hidden`}>
+                    <div className="text-2xl mb-1">{item.icon}</div>
+                    <div className="text-xs font-bold text-center leading-tight">
+                      {adjustedTariff.toFixed(0)}%
                     </div>
+                    
+                    {/* Glow effect for high tariffs */}
+                    {adjustedTariff > 15 && (
+                      <div className="absolute inset-0 bg-red-400 opacity-20 animate-pulse rounded-xl"></div>
+                    )}
+                  </div>
+
+                  {/* Item Label */}
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 text-center whitespace-nowrap">
+                    {item.label}
                   </div>
 
                   {/* Tooltip */}
                   {hoveredItem === item.id && (
-                    <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white rounded-lg shadow-lg text-sm">
+                    <div className="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-3 bg-gray-900 text-white rounded-lg shadow-xl text-sm">
                       <div className="font-semibold mb-2">{item.label}</div>
                       <div className="space-y-1 text-xs">
                         <div>{item.description}</div>
@@ -217,22 +285,37 @@ const BasketImpact: React.FC = () => {
             })}
           </div>
         </div>
+        
+        {/* Basket Legend */}
+        <div className="text-center mt-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full">
+            <span className="text-sm font-medium text-blue-800">
+              🛒 {visibleItems.size} of {basketItems.length} items in basket
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Items appear as tariffs increase • Hover for details
+          </p>
+        </div>
       </div>
 
       {/* Tariff Simulation Slider */}
       <div className="mt-8 p-8 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200 shadow-lg">
         <div className="text-center mb-6">
           <label className="block text-xl font-bold text-gray-800 mb-2">
-            Simulate Tariff Increase: +{tariffShift.toFixed(1)}%
+            🎛️ Simulate Tariff Increase: +{tariffShift.toFixed(1)}%
           </label>
+          <p className="text-sm text-gray-600 mb-4">
+            Move the slider to see items &ldquo;drop&rdquo; into the basket as tariffs increase
+          </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
-              No tariffs
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-100 border border-green-200 rounded-full"></div>
+              <span className="font-medium">No tariffs</span>
             </span>
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-red-500 rounded"></div>
-              High tariffs
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+              <span className="font-medium">High tariffs</span>
             </span>
           </div>
         </div>
@@ -261,17 +344,20 @@ const BasketImpact: React.FC = () => {
 
         {/* Impact Summary */}
         {tariffShift > 0 && (
-          <div className="mt-6 p-6 bg-red-50 border-2 border-red-200 rounded-xl shadow-md">
+          <div className="mt-6 p-6 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl shadow-lg">
             <div className="text-center">
-              <div className="text-red-800 font-bold text-lg mb-2">
+              <div className="text-red-800 font-bold text-xl mb-3 flex items-center justify-center gap-2">
                 💰 Tariff Impact Summary
               </div>
-              <div className="text-red-700 text-base font-medium">
-                Average household pays <span className="font-bold">{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))}</span> 
+              <div className="text-red-700 text-base font-medium mb-2">
+                Average household pays <span className="font-bold text-lg">{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))}</span> 
                 extra per month with {tariffShift.toFixed(1)}% additional tariffs
               </div>
-              <div className="text-red-600 text-sm mt-2">
-                That's {formatCurrency((totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0)) * 12)} per year in additional costs
+              <div className="text-red-600 text-sm">
+                That&apos;s <span className="font-bold">{formatCurrency((totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0)) * 12)}</span> per year in additional costs
+              </div>
+              <div className="mt-3 text-xs text-red-500">
+                💡 {visibleItems.size} items currently affected by tariffs
               </div>
             </div>
           </div>
