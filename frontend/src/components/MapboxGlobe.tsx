@@ -29,6 +29,7 @@ export default function MapboxGlobe({
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const [loading, setLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [selectedFlow, setSelectedFlow] = useState<FlowData | null>(null)
   const [analysis, setAnalysis] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -109,6 +110,7 @@ export default function MapboxGlobe({
       console.error('Error loading map data:', error)
     } finally {
       setLoading(false)
+      setDataLoaded(true)
     }
   }, [])
 
@@ -326,6 +328,7 @@ export default function MapboxGlobe({
   // Reload map data when selected countries change
   useEffect(() => {
     if (mapRef.current && mapRef.current.isStyleLoaded()) {
+      setDataLoaded(false)
       loadMapData(selectedCountries)
     }
   }, [selectedCountries, loadMapData])
@@ -355,7 +358,7 @@ export default function MapboxGlobe({
   // Add click handlers after map is ready
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !map.isStyleLoaded()) return
+    if (!map || !map.isStyleLoaded() || !dataLoaded) return
 
     const handleRouteClick = (e: mapboxgl.MapMouseEvent) => {
       if (e.features && e.features.length > 0) {
@@ -419,7 +422,7 @@ export default function MapboxGlobe({
           currentMap.on('mouseleave', 'tariff-lines', handleMouseLeave)
           currentMap.on('mouseleave', 'tariff-arrows', handleMouseLeave)
         } else {
-          // If layers don't exist yet, try again after a short delay
+          // This should no longer be necessary with the dataLoaded flag, but kept as a fallback
           timeoutId = setTimeout(checkAndAttachHandlers, 100)
         }
       } catch (error) {
@@ -455,7 +458,7 @@ export default function MapboxGlobe({
         console.warn('Map cleanup failed:', error)
       }
     }
-  }, [handleFlowClick, selectedCountries]) // Re-attach when countries change
+  }, [handleFlowClick, dataLoaded]) // Re-attach when countries change
 
   return (
     <div className="w-full h-full relative">
