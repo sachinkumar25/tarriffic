@@ -111,8 +111,7 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
 
   const layout = {
     title: 'Trade Composition by Sector',
-    width: 1200,
-    height: 800,
+    autosize: true,
     font: {
       family: 'Inter, sans-serif',
     },

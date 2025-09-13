@@ -1,7 +1,9 @@
+import { cn } from "@/lib/utils"
+
 // Clean gradient backdrop with world map SVG overlay
-export default function SupplyChainBackdrop() {
+export default function SupplyChainBackdrop({ className = "" }: { className?: string }) {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-[-1]">
+    <div className={cn("pointer-events-none fixed inset-0 -z-[-1]", className)}>
       {/* Base gradients */}
       <div className="absolute inset-0">
         <div className="

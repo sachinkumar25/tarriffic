@@ -5,7 +5,6 @@ import Link from "next/link"
 import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
 import ChartThumb from "@/components/ChartThumb"
-import SupplyChainBackdrop from "@/components/SupplyChainBackdrop"
 import { cn } from "@/lib/utils"
 
 const sections = [
@@ -86,8 +85,6 @@ export default function Home() {
   }, [])
   return (
     <div className="relative isolate min-h-screen bg-black text-white">
-      <SupplyChainBackdrop />
-
       <div className="relative z-10 px-4 pt-6">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-sky-200 via-cyan-200 to-white drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
@@ -208,7 +205,7 @@ export default function Home() {
 
             {/* Sector Breakdown */}
             <Link
-              href="#"
+              href="/sectors"
               className={cn(
                 "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
                 activeSection === 3

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
-import Dock from "@/components/Dock";
+import PageWrapper from "@/components/PageWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <Dock />
+        <PageWrapper>{children}</PageWrapper>
       </body>
     </html>
   );

@@ -275,38 +275,38 @@ export default function Heatmap({
     switch (metric) {
       case 'avg_tariff':
         stops = [
-          [0, '#E5F5E0'],
-          [2, '#A1D99B'],
-          [5, '#31A354'],
-          [10, '#006D2C'],
-          [20, '#00441B']
+          [0, '#EFF3FF'],
+          [2, '#BDD7E7'],
+          [5, '#6BAED6'],
+          [10, '#3182BD'],
+          [20, '#08519C']
         ]
         break
       case 'total_trade_value':
         stops = [
-          [0, '#E5F5E0'],
-          [1000000000, '#A1D99B'], // 1B
-          [5000000000, '#31A354'], // 5B
-          [10000000000, '#006D2C'], // 10B
-          [50000000000, '#00441B'] // 50B
+          [0, '#EFF3FF'],
+          [1000000000, '#BDD7E7'], // 1B
+          [5000000000, '#6BAED6'], // 5B
+          [10000000000, '#3182BD'], // 10B
+          [50000000000, '#08519C'] // 50B
         ]
         break
       case 'tariff_revenue':
         stops = [
-          [0, '#E5F5E0'],
-          [100000000, '#A1D99B'], // 100M
-          [500000000, '#31A354'], // 500M
-          [1000000000, '#006D2C'], // 1B
-          [5000000000, '#00441B'] // 5B
+          [0, '#EFF3FF'],
+          [100000000, '#BDD7E7'], // 100M
+          [500000000, '#6BAED6'], // 500M
+          [1000000000, '#3182BD'], // 1B
+          [5000000000, '#08519C'] // 5B
         ]
         break
       default:
         stops = [
-          [0, '#E5F5E0'],
-          [2, '#A1D99B'],
-          [5, '#31A354'],
-          [10, '#006D2C'],
-          [20, '#00441B']
+          [0, '#EFF3FF'],
+          [2, '#BDD7E7'],
+          [5, '#6BAED6'],
+          [10, '#3182BD'],
+          [20, '#08519C']
         ]
     }
     setColorStops(stops);
@@ -375,19 +375,19 @@ export default function Heatmap({
               <h3 className="text-lg font-semibold text-white mb-3">Color Legend</h3>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-green-100 rounded"></div>
+                  <div className="w-4 h-4 bg-blue-100 rounded"></div>
                   <span className="text-white/70 text-sm">Low</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-green-300 rounded"></div>
+                  <div className="w-4 h-4 bg-blue-300 rounded"></div>
                   <span className="text-white/70 text-sm">Medium</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-green-600 rounded"></div>
+                  <div className="w-4 h-4 bg-blue-600 rounded"></div>
                   <span className="text-white/70 text-sm">High</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-green-900 rounded"></div>
+                  <div className="w-4 h-4 bg-blue-900 rounded"></div>
                   <span className="text-white/70 text-sm">Very High</span>
                 </div>
               </div>
