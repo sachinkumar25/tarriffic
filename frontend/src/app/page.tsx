@@ -1,153 +1,236 @@
+'use client'
+
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
 import ChartThumb from "@/components/ChartThumb"
 import SupplyChainBackdrop from "@/components/SupplyChainBackdrop"
+import { cn } from "@/lib/utils"
+
+const sections = [
+  {
+    id: "intro",
+    title: "Tariffs: The Price of Protection",
+    description:
+      "A tariff is a tax on foreign goods entering the country. When a car from Germany or electronics from China arrive at a U.S. port, the government collects this tax. It's often said that other countries pay for tariffs, but in reality, the cost is typically passed down to American businesses and consumers through higher prices. We'll explore how the U.S. uses tariffs to protect its industries and the impact on the American economy.",
+  },
+  {
+    id: "globe",
+    title: "America's Global Trade Network",
+    description:
+      "This globe visualizes the United States' vast network of trade relationships. Each line represents a flow of goods between the U.S. and its global partners. These connections are the lifeblood of the American economy. Click the globe to explore an interactive view of these trade routes, showing the products Americans export and import, and the tariffs involved.",
+  },
+  {
+    id: "heatmaps",
+    title: "Tariff Strategy at a Glance",
+    description:
+      "Tariffs are not applied uniformly; they are a strategic tool. The heatmap on the left shows which product categories face the highest taxes, a direct look at the industries the U.S. government protects most. On the right, a global view illustrates all countries and their trade flows in context. Click the world heatmap to explore these economic strategies in detail.",
+  },
+  {
+    id: "sectors",
+    title: "Protecting Industries",
+    description:
+      "From steel and automobiles to agriculture, governments use tariffs to shield key industries from foreign competition. This chart breaks down which sectors receive the most protection. While these policies can support domestic jobs, they often result in higher prices and fewer choices for consumers. Click the chart for a detailed breakdown.",
+  },
+  {
+    id: "trends",
+    title: "How Trade Policies the Economy",
+    description:
+      "A change in a trade policy can create ripples across the globe. This chart shows how trade volumes respond to new tariffs. A sudden hike can trigger retaliation from other nations, disrupting supply chains for businesses and affecting the global economy. Click the chart to interact with the data and see how these critical economic trends unfold.",
+  },
+]
 
 export default function Home() {
+  const [activeSection, setActiveSection] = useState(0)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = sectionRefs.current.indexOf(
+              entry.target as HTMLDivElement
+            )
+            setActiveSection(index)
+          } else {
+            const index = sectionRefs.current.indexOf(
+              entry.target as HTMLDivElement
+            )
+            if (activeSection === index) {
+              setActiveSection(-1)
+            }
+          }
+        })
+      },
+      {
+        rootMargin: "-30% 0px -30% 0px",
+        threshold: 0.8,
+      }
+    )
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) {
+        observer.observe(ref)
+      }
+    })
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) {
+          observer.unobserve(ref)
+        }
+      })
+    }
+  }, [])
   return (
     <div className="relative isolate min-h-screen bg-black text-white">
-      {/* animated background */}
       <SupplyChainBackdrop />
 
-      {/* header */}
-      <div className="relative z-10 px-4 pt-6 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight
-                       bg-clip-text text-transparent
-                       bg-gradient-to-b from-sky-200 via-cyan-200 to-white
-                       drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
-          Tarrific
-        </h1>
-        <p className="mt-2 text-xl text-gray-300 font-medium">
-          Explore how tariffs shape global trade
-        </p>
-        <div className="mt-3 mb-4 flex justify-center gap-12">
-          <Link
-            href="#"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors
-                       underline underline-offset-8 decoration-transparent hover:decoration-sky-400/50"
-          >
-            How to Use
-          </Link>
-          <Link
-            href="/tariff-info"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors
-                       underline underline-offset-8 decoration-transparent hover:decoration-sky-400/50"
-          >
-            Tariff Info
-          </Link>
+      <div className="relative z-10 px-4 pt-6">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-sky-200 via-cyan-200 to-white drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
+            Tarrific
+          </h1>
+          <p className="mt-4 text-xl md:text-2xl text-sky-200/90 font-medium tracking-wide">
+            An Interactive Guide to U.S. Tariffs
+          </p>
         </div>
+        <Link
+          href="/tariff-info"
+          className="absolute top-8 right-8 text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+        >
+          Tariff Info
+        </Link>
       </div>
 
-      {/* node layer */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4">
-        {/* Globe — hard circular mask, centered */}
-        <Link
-          href="/globe"
-          id="globe-component"
-          className="relative block mx-auto mt-8 w-[520px] md:w-[560px] aspect-square group"
-        >
-          {/* use a true mask so nothing bleeds past the circle */}
-          <div
-            className="absolute inset-0"
-            style={{
-              WebkitMaskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
-              maskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
-            }}
-          >
-            <MapboxGlobe transparentBackground />
-          </div>
-          {/* Hover overlay with exact same mask as globe */}
-          <div
-            className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center"
-            style={{
-              WebkitMaskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
-              maskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
-            }}
-          >
-            <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-              Click to explore global tariffs
-            </span>
-          </div>
-        </Link>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
+        {/* Left side: Scrolling Text Content */}
+        <div className="py-24 space-y-4">
+          {sections.map((section, index) => (
+            <section
+              key={section.id}
+              className="min-h-screen flex flex-col justify-center"
+            >
+              <div
+                ref={(el) => {
+                  if (el) {
+                    sectionRefs.current[index] = el
+                  }
+                }}
+                className="bg-black/50 backdrop-blur-sm p-8 rounded-2xl"
+              >
+                <h2 className="text-3xl font-bold mb-4 text-sky-200">
+                  {section.title}
+                </h2>
+                <p className="text-lg text-gray-300 leading-relaxed">
+                  {section.description}
+                </p>
+              </div>
+            </section>
+          ))}
+        </div>
 
-        {/* Absolute nodes placed at arc endpoints */}
-        {/* US heatmap – top-left corner */}
-        <section className="absolute left-[min(3.5vw,40px)] top-[80px]">
-          <Link 
-            href="#" 
-            id="us-heatmap"
-            className="block w-[150px] aspect-square group relative"
-          >
-            <div className="w-full h-full">
-              <HeatmapThumb variant="us" className="h-full w-full rounded-2xl" />
-            </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
-              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                US Tariff Rates
-              </span>
-            </div>
-          </Link>
-        </section>
-
-        {/* World heatmap – bottom-left corner */}
-        <section className="absolute left-[min(3.5vw,40px)] top-[400px]">
-          <Link 
-            href="/heatmap" 
-            id="world-heatmap"
-            className="block w-[150px] aspect-square group relative"
-          >
-            <div className="w-full h-full">
-              <HeatmapThumb variant="world" className="h-full w-full rounded-2xl" />
-            </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
-              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                Global Trade Flows
-              </span>
-            </div>
-          </Link>
-        </section>
-
-        {/* Line chart – top-right corner */}
-        <section className="absolute right-[min(3.5vw,40px)] top-[70px]">
-          <Link 
-            href="#" 
-            id="line-chart"
-            className="block w-[300px] h-[180px] group relative"
-          >
-            <div className="w-full h-full rounded-2xl overflow-hidden">
-              <ChartThumb variant="line" className="h-full w-full" />
-            </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl overflow-hidden">
-              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                Trade Volume Trends
-              </span>
-            </div>
-          </Link>
-        </section>
-
-        {/* Pie chart – bottom-right corner (made bigger) */}
-        <section className="absolute right-[min(3.5vw,40px)] top-[400px]">
-          <Link 
-            href="#" 
-            id="pie-chart"
-            className="block w-[200px] aspect-square group relative"
-          >
-            <div className="w-full aspect-square rounded-full overflow-hidden grid place-items-center">
-              <div className="w-[82%] aspect-square rounded-full overflow-hidden">
-                <ChartThumb variant="pie" />
+        {/* Right side: Sticky Visuals */}
+        <div className="sticky top-0 h-screen flex items-center justify-start">
+          <div className="relative w-full h-full max-w-xl max-h-xl flex items-center justify-center">
+            {/* Intro Visual Placeholder */}
+            <div
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                activeSection === 0
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-400">
+                  Scroll down to begin
+                </p>
               </div>
             </div>
-            {/* Hover overlay matching the rounded rectangle shape */}
-            <div className="absolute top-1/2 left-1/2 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-full"
-                 style={{ width: '64%', height: '64%', transform: 'translate(-50%, -50%)' }}>
-              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                Sector Breakdown
-              </span>
-            </div>
-          </Link>
-        </section>
 
+            {/* Interactive Globe */}
+            <Link
+              href="/globe"
+              className={cn(
+                "absolute inset-0 transition-opacity duration-300 w-[560px] h-[560px]",
+                activeSection === 1
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              <MapboxGlobe transparentBackground />
+            </Link>
+
+            {/* Heatmaps */}
+            <div
+              className={cn(
+                "absolute inset-0 flex items-center justify-center gap-12 transition-opacity duration-300",
+                activeSection === 2
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              {/* US Heatmap on the left */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-[200px] aspect-square">
+                  <HeatmapThumb
+                    variant="us"
+                    className="h-full w-full rounded-2xl"
+                  />
+                </div>
+                <p className="text-lg font-semibold text-gray-200">
+                  U.S. Tariff Rates
+                </p>
+              </div>
+
+              {/* World Heatmap on the right */}
+              <Link href="/heatmap" className="flex flex-col items-center gap-2">
+                <div className="w-[200px] aspect-square">
+                  <HeatmapThumb
+                    variant="world"
+                    className="h-full w-full rounded-2xl"
+                  />
+                </div>
+                <p className="text-lg font-semibold text-gray-200">
+                  Global Trade Flows
+                </p>
+              </Link>
+            </div>
+
+            {/* Sector Breakdown */}
+            <Link
+              href="#"
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                activeSection === 3
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="w-[240px] aspect-square">
+                <ChartThumb variant="pie" />
+              </div>
+            </Link>
+
+            {/* Volume Trends */}
+            <Link
+              href="#"
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                activeSection === 4
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="w-[480px] h-[270px]">
+                <ChartThumb variant="line" className="h-full w-full" />
+              </div>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
