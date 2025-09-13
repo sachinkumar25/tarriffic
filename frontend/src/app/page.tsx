@@ -3,7 +3,6 @@ import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
 import ChartThumb from "@/components/ChartThumb"
 import SupplyChainBackdrop from "@/components/SupplyChainBackdrop"
-import ArcConnectors from "@/components/ArcConnectors"
 
 export default function Home() {
   return (
@@ -52,18 +51,23 @@ export default function Home() {
           <div
             className="absolute inset-0"
             style={{
-              WebkitMaskImage:
-                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
-              maskImage:
-                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
+              maskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
             }}
           >
             <MapboxGlobe transparentBackground />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center">
-              <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                Click to explore global tariffs
-              </span>
-            </div>
+          </div>
+          {/* Hover overlay with exact same mask as globe */}
+          <div
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center"
+            style={{
+              WebkitMaskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
+              maskImage: "radial-gradient(circle at center, black 47.5%, transparent 47.8%)",
+            }}
+          >
+            <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+              Click to explore global tariffs
+            </span>
           </div>
         </Link>
 
@@ -109,12 +113,12 @@ export default function Home() {
           <Link 
             href="#" 
             id="line-chart"
-            className="block w-[300px] h-[160px] group relative"
+            className="block w-[300px] h-[180px] group relative"
           >
             <div className="w-full h-full rounded-2xl overflow-hidden">
               <ChartThumb variant="line" className="h-full w-full" />
             </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl overflow-hidden">
               <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
                 Trade Volume Trends
               </span>
@@ -134,7 +138,9 @@ export default function Home() {
                 <ChartThumb variant="pie" />
               </div>
             </div>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-full">
+            {/* Hover overlay matching the rounded rectangle shape */}
+            <div className="absolute top-1/2 left-1/2 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-full"
+                 style={{ width: '64%', height: '64%', transform: 'translate(-50%, -50%)' }}>
               <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
                 Sector Breakdown
               </span>
@@ -142,28 +148,6 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* CONNECTORS — mount AFTER all nodes so endpoints always resolve */}
-        <ArcConnectors
-          pairs={[
-            // Strategic primary connections only - creating a clean data flow
-            { 
-              from: { componentId: "us-heatmap", side: "right", offset: 50 },
-              to: { componentId: "globe-component", side: "left", offset: 32 }
-            },
-            { 
-              from: { componentId: "world-heatmap", side: "right", offset: 50 },
-              to: { componentId: "globe-component", side: "left", offset: 72 }
-            },
-            { 
-              from: { componentId: "globe-component", side: "right", offset: 32 },
-              to: { componentId: "line-chart", side: "left", offset: 46 }
-            },
-            { 
-              from: { componentId: "globe-component", side: "right", offset: 72 },
-              to: { componentId: "pie-chart", side: "left", offset: 50 }
-            },
-          ]}
-        />
       </div>
     </div>
   )
