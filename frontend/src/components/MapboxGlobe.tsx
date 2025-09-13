@@ -5,6 +5,17 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { generateTariffGeoJSON } from '@/lib/tradeData'
 
+interface FlowData {
+  reporter: string;
+  partner: string;
+  product: string;
+  hs4: string;
+  year: number;
+  trade_value: number;
+  tariff_rate: number;
+  tariff_revenue: number;
+}
+
 const INITIAL_CENTER: [number, number] = [0, 15]
 const INITIAL_ZOOM = 1.25
 
@@ -16,6 +27,41 @@ export default function MapboxGlobe({
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const [loading, setLoading] = useState(false)
+  const [selectedFlow, setSelectedFlow] = useState<FlowData | null>(null)
+  const [analysis, setAnalysis] = useState<string>("")
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
+
+  // Function to fetch analysis from API
+  const fetchAnalysis = async (flow: FlowData) => {
+    setIsAnalyzing(true)
+    try {
+      const res = await fetch("/api/analyzeFlow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flow }),
+      })
+      const data = await res.json()
+      if (data.status === "success") {
+        setAnalysis(data.analysis)
+      } else {
+        setAnalysis("Failed to generate analysis. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error fetching analysis:", error)
+      setAnalysis("Failed to generate analysis. Please try again.")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  // Handle flow click
+  const handleFlowClick = async (flow: FlowData) => {
+    setSelectedFlow(flow)
+    setShowDrawer(true)
+    setAnalysis("")
+    await fetchAnalysis(flow)
+  }
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -113,6 +159,34 @@ export default function MapboxGlobe({
               },
             })
           }
+
+          // Add click handler for tariff arrows
+          map.on('click', 'tariff-arrows', (e) => {
+            if (e.features && e.features.length > 0) {
+              const feature = e.features[0]
+              const props = feature.properties
+              const flow: FlowData = {
+                reporter: props.reporter || 'United States',
+                partner: props.partner || 'Unknown',
+                product: props.product || 'Unknown Product',
+                hs4: props.hs4 || '0000',
+                year: props.year || 2022,
+                trade_value: props.tradeValue || 0,
+                tariff_rate: props.tariffRate || 0,
+                tariff_revenue: props.tariff_revenue || 0,
+              }
+              handleFlowClick(flow)
+            }
+          })
+
+          // Change cursor on hover
+          map.on('mouseenter', 'tariff-arrows', () => {
+            map.getCanvas().style.cursor = 'pointer'
+          })
+
+          map.on('mouseleave', 'tariff-arrows', () => {
+            map.getCanvas().style.cursor = ''
+          })
         })
         .catch(err => {
           console.error('tariff data error:', err)
@@ -144,6 +218,63 @@ export default function MapboxGlobe({
         </div>
       )}
       <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Side Drawer for Analysis */}
+      {showDrawer && selectedFlow && (
+        <div className="absolute top-0 right-0 w-96 h-full bg-black/90 backdrop-blur-sm border-l border-white/20 z-50 overflow-y-auto">
+          <div className="p-6">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">
+                {selectedFlow.reporter} → {selectedFlow.partner}
+              </h2>
+              <button
+                onClick={() => setShowDrawer(false)}
+                className="text-white/70 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Flow Details */}
+            <div className="space-y-4 mb-6">
+              <div>
+                <span className="text-white/70 text-sm">Product:</span>
+                <p className="text-white font-medium">{selectedFlow.product}</p>
+              </div>
+              <div>
+                <span className="text-white/70 text-sm">Trade Value:</span>
+                <p className="text-white font-medium">${selectedFlow.trade_value.toLocaleString()}</p>
+              </div>
+              <div>
+                <span className="text-white/70 text-sm">Tariff Rate:</span>
+                <p className="text-white font-medium">{selectedFlow.tariff_rate}%</p>
+              </div>
+              <div>
+                <span className="text-white/70 text-sm">Estimated Revenue:</span>
+                <p className="text-white font-medium">${selectedFlow.tariff_revenue.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Analysis Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">Macroeconomic Analysis</h3>
+              <div className="bg-white/5 rounded-lg p-4">
+                {isAnalyzing ? (
+                  <div className="flex items-center space-x-2 text-white/70">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Generating analysis...</span>
+                  </div>
+                ) : analysis ? (
+                  <p className="text-white/90 leading-relaxed">{analysis}</p>
+                ) : (
+                  <p className="text-white/70">Click on a tariff arrow to see analysis</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

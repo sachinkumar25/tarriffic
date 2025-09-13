@@ -81,6 +81,11 @@ export const generateTariffGeoJSON = async () => {
             tariffRate: tariffRate,
             tradeValue: parseFloat(row['TradeValue in 1000 USD']) * 1000,
             partner: row.PartnerName,
+            reporter: 'United States',
+            product: `HS4 ${row.ProductCode.padStart(4, '0')}`,
+            hs4: row.ProductCode.padStart(4, '0'),
+            year: 2022, // Default year, could be made dynamic
+            tariff_revenue: (parseFloat(row['TradeValue in 1000 USD']) * 1000 * tariffRate) / 100,
           },
           geometry: {
             type: 'LineString',

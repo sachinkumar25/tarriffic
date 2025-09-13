@@ -11,7 +11,9 @@
     "test-api": "node scripts/test-api.js"
   },
   "dependencies": {
+    "dotenv": "^17.2.2",
     "next": "^14.0.0",
+    "openai": "^5.20.2",
     "papaparse": "^5.5.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
