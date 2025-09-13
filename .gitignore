@@ -73,3 +73,10 @@ venv.bak/
 # Temporary files
 *.tmp
 *.temp
+# Build files
+.next/
+node_modules/
+.env.local
+.DS_Store
+*.log
+.vercel

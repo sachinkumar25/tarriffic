@@ -5,11 +5,20 @@ import Heatmap from '@/components/Heatmap'
 import HotspotList from '@/components/HotspotList';
 import { Switch } from '@/components/ui/switch';
 
+interface CountryData {
+  country: string;
+  iso_a3: string;
+  avg_tariff: number;
+  total_trade_value: number;
+  tariff_revenue: number;
+  product_count: number;
+}
+
 export default function HeatmapPage() {
   const [metric, setMetric] = useState<'avg_tariff' | 'total_trade_value' | 'tariff_revenue'>('avg_tariff')
   const [projection, setProjection] = useState<'globe' | 'mercator'>('globe');
   const [showHotspots, setShowHotspots] = useState(true);
-  const [countryData, setCountryData] = useState([]);
+  const [countryData, setCountryData] = useState<CountryData[]>([]);
 
   return (
     <div className="w-full h-screen relative">

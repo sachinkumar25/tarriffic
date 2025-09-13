@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-
-// Setup OpenAI client
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,37 +9,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing flow data" }, { status: 400 });
     }
 
-    // Create the structured prompt
-    const prompt = `
-    You are an expert trade economist. Analyze this bilateral tariff flow:
+    // Query Supabase for pre-stored analysis based on flow data
+    const { data, error } = await supabase
+      .from('trade_analyses')
+      .select('analysis')
+      .eq('reporter', flow.reporter)
+      .eq('partner', flow.partner)
+      .eq('hs4', flow.hs4)
+      .eq('year', flow.year)
+      .single();
 
-    Reporter: ${flow.reporter}
-    Partner: ${flow.partner}
-    Product: ${flow.product} (HS4 ${flow.hs4})
-    Year: ${flow.year}
-    Trade Value: $${flow.trade_value.toLocaleString()}
-    Tariff: ${flow.tariff_rate}%
-    Estimated Tariff Revenue: $${flow.tariff_revenue.toLocaleString()}
+    if (error || !data) {
+      console.log("No pre-stored analysis found, using fallback:", error?.message || "No data");
+      
+      // Fallback: Create a user-friendly analysis if not found in database
+      const fallbackAnalysis = `**What This Trade Route Means**
 
-    Task:
-    - Explain why this tariff exists (historical, political, or economic reasons).
-    - Describe its macroeconomic impact (prices, trade balance, supply chains).
-    - Connect to broader trends (trade wars, inflation, globalization).
-    - Keep it concise, clear, and engaging.
-    `;
+**Why This Matters:**
+The United States and ${flow.partner} have a major trading relationship worth $${(flow.trade_value / 1e9).toFixed(1)} billion annually. This trade supports jobs, provides consumers with goods, and generates government revenue.
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are an expert trade economist." },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 400,
-    });
+**The Import Tax (Tariff):**
+• The U.S. charges a ${flow.tariff_rate?.toFixed(1) || 'N/A'}% tax on these imports
+• This adds about $${(flow.tariff_revenue / 1e9).toFixed(2)} billion to government revenue each year
+• The tax helps protect American businesses but makes imports more expensive
+
+**Impact on You:**
+• Higher import taxes can mean higher prices for consumers
+• American companies in similar industries get protection from foreign competition
+• The government uses this tax revenue for public services and programs
+
+**The Bigger Picture:**
+This trade relationship is part of America's broader economic strategy. Tariffs balance protecting domestic industries with maintaining beneficial trade relationships that provide consumers with diverse, affordable products.`;
+
+      return NextResponse.json({
+        status: "success",
+        analysis: fallbackAnalysis,
+        source: "fallback"
+      });
+    }
 
     return NextResponse.json({
       status: "success",
-      analysis: completion.choices[0].message?.content,
+      analysis: data.analysis,
+      source: "supabase"
     });
 
   } catch (err: unknown) {
