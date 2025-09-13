@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { generateTariffGeoJSON } from '@/lib/tradeData'
@@ -56,12 +56,12 @@ export default function MapboxGlobe({
   }
 
   // Handle flow click
-  const handleFlowClick = async (flow: FlowData) => {
+  const handleFlowClick = useCallback(async (flow: FlowData) => {
     setSelectedFlow(flow)
     setShowDrawer(true)
     setAnalysis("")
     await fetchAnalysis(flow)
-  }
+  }, [])
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -109,73 +109,73 @@ export default function MapboxGlobe({
         .then(data => {
           if (!mapRef.current) return
 
-          if (!map.getSource('tariffs')) {
-            map.addSource('tariffs', { type: 'geojson', data: data as any })
+          if (!map.getSource('tariffs-lines')) {
+            map.addSource('tariffs-lines', {
+              type: 'geojson',
+              data: data.lines,
+            })
           }
+          if (!map.getSource('tariffs-arrows')) {
+            map.addSource('tariffs-arrows', {
+              type: 'geojson',
+              data: data.arrows,
+            })
+          }
+
           if (!map.getLayer('tariff-lines')) {
             map.addLayer({
               id: 'tariff-lines',
               type: 'line',
-              source: 'tariffs',
+              source: 'tariffs-lines',
               layout: { 'line-cap': 'round', 'line-join': 'round' },
               paint: {
-                'line-width': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tradeValue'], 0],
-                  0, 0.5,
-                  1e10, 5,
-                ],
-                'line-color': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
-                  0, 'blue',
-                  10, 'purple',
-                  20, 'red',
-                ],
-                'line-opacity': 0.7,
+                'line-width': 2,
+                'line-color': 'black',
+                'line-opacity': 1,
               },
             })
           }
-          if (!map.getLayer('tariff-arrows')) {
-            map.addLayer({
-              id: 'tariff-arrows',
-              type: 'symbol',
-              source: 'tariffs',
-              layout: {
-                'symbol-placement': 'line',
-                'symbol-spacing': 100,
-                'text-field': '▶',
-                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-                'text-size': 12,
-                'text-rotate': 90,
-                'text-allow-overlap': true,
-                'text-ignore-placement': true,
-                'text-keep-upright': false,
-              },
-              paint: {
-                'text-color': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
-                  0, 'blue',
-                  20, 'red',
-                ],
-              },
-            })
+          if (map.getLayer('tariff-arrows')) {
+            map.removeLayer('tariff-arrows')
           }
+
+          map.addLayer({
+            id: 'tariff-arrows',
+            type: 'symbol',
+            source: 'tariffs-arrows',
+            layout: {
+              'text-field': '▲',
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+              'text-size': 24,
+              'text-rotate': ['get', 'bearing'],
+              'text-rotation-alignment': 'map',
+              'text-pitch-alignment': 'map',
+              'text-allow-overlap': true,
+              'text-ignore-placement': true,
+            },
+            paint: {
+              'text-color': 'black',
+            },
+          })
 
           // Add click handler for tariff arrows
           map.on('click', 'tariff-arrows', (e) => {
             if (e.features && e.features.length > 0) {
               const feature = e.features[0]
               const props = feature.properties
-              const flow: FlowData = {
-                reporter: props.reporter || 'United States',
-                partner: props.partner || 'Unknown',
-                product: props.product || 'Unknown Product',
-                hs4: props.hs4 || '0000',
-                year: props.year || 2022,
-                trade_value: props.tradeValue || 0,
-                tariff_rate: props.tariffRate || 0,
-                tariff_revenue: props.tariff_revenue || 0,
+              if (props) {
+                const flow: FlowData = {
+                  reporter: props.reporter || 'United States',
+                  partner: props.partner || 'Unknown',
+                  product: props.product || 'Unknown Product',
+                  hs4: props.hs4 || '0000',
+                  year: props.year || 2022,
+                  trade_value: props.tradeValue || 0,
+                  tariff_rate: props.tariffRate || 0,
+                  tariff_revenue: props.tariff_revenue || 0,
+                }
+                handleFlowClick(flow)
               }
-              handleFlowClick(flow)
             }
           })
 
@@ -208,7 +208,7 @@ export default function MapboxGlobe({
       map.remove()
       mapRef.current = null
     }
-  }, [transparentBackground])
+  }, [transparentBackground, handleFlowClick])
 
   return (
     <div className="w-full h-full relative">

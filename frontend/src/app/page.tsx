@@ -3,7 +3,6 @@ import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
 import ChartThumb from "@/components/ChartThumb"
 import SupplyChainBackdrop from "@/components/SupplyChainBackdrop"
-import Dock from "@/components/Dock"
 import ArcConnectors from "@/components/ArcConnectors"
 
 export default function Home() {
@@ -20,6 +19,9 @@ export default function Home() {
                        drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
           Tarrific
         </h1>
+        <p className="mt-2 text-xl text-gray-300 font-medium">
+          Explore how tariffs shape global trade
+        </p>
         <div className="mt-3 mb-4 flex justify-center gap-12">
           <Link
             href="#"
@@ -43,6 +45,7 @@ export default function Home() {
         {/* Globe — hard circular mask, centered */}
         <Link
           href="/globe"
+          id="globe-component"
           className="relative block mx-auto mt-8 w-[520px] md:w-[560px] aspect-square group"
         >
           {/* use a true mask so nothing bleeds past the circle */}
@@ -58,60 +61,107 @@ export default function Home() {
             <MapboxGlobe transparentBackground />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center">
               <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                Click to explore
+                Click to explore global tariffs
               </span>
             </div>
           </div>
-
-          {/* docks around the globe */}
-          <Dock id="globeDockLeftTop"     side="left"  offset="38%" />
-          <Dock id="globeDockLeftBottom"  side="left"  offset="66%" />
-          <Dock id="globeDockRightTop"    side="right" offset="38%" />
-          <Dock id="globeDockRightBottom" side="right" offset="66%" />
         </Link>
 
         {/* Absolute nodes placed at arc endpoints */}
-        {/* US heatmap – top-left (smaller) */}
-        <section className="absolute left-[min(3.5vw,40px)] top-[220px]">
-          <div className="w-[150px] aspect-square">
-            <HeatmapThumb variant="us" className="h-full w-full rounded-2xl" />
-          </div>
-          <Dock id="usDockRight" side="right" offset="50%" />
-        </section>
-
-        {/* World heatmap – bottom-left (smaller) */}
-        <section className="absolute left-[min(3.5vw,40px)] top-[430px]">
-          <div className="w-[150px] aspect-square">
-            <HeatmapThumb variant="world" className="h-full w-full rounded-2xl" />
-          </div>
-          <Dock id="worldDockRight" side="right" offset="50%" />
-        </section>
-
-        {/* Line chart – top-right (smaller) */}
-        <section className="absolute right-[min(3.5vw,40px)] top-[210px]">
-          <div className="w-[300px] h-[160px] rounded-2xl overflow-hidden">
-            <ChartThumb variant="line" className="h-full w-full" />
-          </div>
-          <Dock id="lineDockLeft" side="left" offset="46%" />
-        </section>
-
-        {/* Pie chart – bottom-right, perfect circle */}
-        <section className="absolute right-[min(3.5vw,40px)] top-[450px]">
-          <div className="w-[150px] aspect-square rounded-full overflow-hidden grid place-items-center">
-            <div className="w-[82%] aspect-square rounded-full overflow-hidden">
-              <ChartThumb variant="pie" />
+        {/* US heatmap – top-left corner */}
+        <section className="absolute left-[min(3.5vw,40px)] top-[80px]">
+          <Link 
+            href="#" 
+            id="us-heatmap"
+            className="block w-[150px] aspect-square group relative"
+          >
+            <div className="w-full h-full">
+              <HeatmapThumb variant="us" className="h-full w-full rounded-2xl" />
             </div>
-          </div>
-          <Dock id="pieDockLeft" side="left" offset="50%" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
+              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                US Tariff Rates
+              </span>
+            </div>
+          </Link>
+        </section>
+
+        {/* World heatmap – bottom-left corner */}
+        <section className="absolute left-[min(3.5vw,40px)] top-[400px]">
+          <Link 
+            href="#" 
+            id="world-heatmap"
+            className="block w-[150px] aspect-square group relative"
+          >
+            <div className="w-full h-full">
+              <HeatmapThumb variant="world" className="h-full w-full rounded-2xl" />
+            </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
+              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                Global Trade Flows
+              </span>
+            </div>
+          </Link>
+        </section>
+
+        {/* Line chart – top-right corner */}
+        <section className="absolute right-[min(3.5vw,40px)] top-[70px]">
+          <Link 
+            href="#" 
+            id="line-chart"
+            className="block w-[300px] h-[160px] group relative"
+          >
+            <div className="w-full h-full rounded-2xl overflow-hidden">
+              <ChartThumb variant="line" className="h-full w-full" />
+            </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-2xl">
+              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                Trade Volume Trends
+              </span>
+            </div>
+          </Link>
+        </section>
+
+        {/* Pie chart – bottom-right corner (made bigger) */}
+        <section className="absolute right-[min(3.5vw,40px)] top-[400px]">
+          <Link 
+            href="#" 
+            id="pie-chart"
+            className="block w-[200px] aspect-square group relative"
+          >
+            <div className="w-full aspect-square rounded-full overflow-hidden grid place-items-center">
+              <div className="w-[82%] aspect-square rounded-full overflow-hidden">
+                <ChartThumb variant="pie" />
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center rounded-full">
+              <span className="text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity text-center">
+                Sector Breakdown
+              </span>
+            </div>
+          </Link>
         </section>
 
         {/* CONNECTORS — mount AFTER all nodes so endpoints always resolve */}
         <ArcConnectors
           pairs={[
-            { from: "usDockRight",          to: "globeDockLeftTop" },
-            { from: "worldDockRight",       to: "globeDockLeftBottom", dashed: true },
-            { from: "globeDockRightTop",    to: "lineDockLeft" },
-            { from: "globeDockRightBottom", to: "pieDockLeft", dashed: true },
+            // Strategic primary connections only - creating a clean data flow
+            { 
+              from: { componentId: "us-heatmap", side: "right", offset: 50 },
+              to: { componentId: "globe-component", side: "left", offset: 32 }
+            },
+            { 
+              from: { componentId: "world-heatmap", side: "right", offset: 50 },
+              to: { componentId: "globe-component", side: "left", offset: 72 }
+            },
+            { 
+              from: { componentId: "globe-component", side: "right", offset: 32 },
+              to: { componentId: "line-chart", side: "left", offset: 46 }
+            },
+            { 
+              from: { componentId: "globe-component", side: "right", offset: 72 },
+              to: { componentId: "pie-chart", side: "left", offset: 50 }
+            },
           ]}
         />
       </div>
