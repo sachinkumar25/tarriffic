@@ -11,12 +11,14 @@
     "test-api": "node scripts/test-api.js"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
     "dotenv": "^17.2.2",
     "next": "^14.0.0",
     "openai": "^5.20.2",
     "papaparse": "^5.5.3",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
