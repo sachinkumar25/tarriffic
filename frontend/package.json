@@ -21,6 +21,7 @@
     "openai": "^5.20.2",
     "papaparse": "^5.5.3",
     "react": "19.1.0",
+    "react-chrono": "^2.9.1",
     "react-dom": "19.1.0",
     "react-map-gl": "^8.0.4",
     "tailwind-merge": "^3.3.1"
