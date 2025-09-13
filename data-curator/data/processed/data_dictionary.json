@@ -1,0 +1,156 @@
+{
+  "dataset_info": {
+    "name": "merged_summary",
+    "description": "Intersection of US tariff and trade data by HS4 product codes",
+    "records": 168,
+    "columns": 9,
+    "created_date": "2024-09-13",
+    "data_sources": ["WITS Tariff Database (2023)", "UN Comtrade (2024)"],
+    "geographic_scope": "United States (including Puerto Rico and US Virgin Islands)"
+  },
+  "columns": {
+    "hs4": {
+      "type": "string",
+      "description": "4-digit Harmonized System product code",
+      "example": "2709",
+      "source": "WITS/Comtrade",
+      "notes": "Primary key for merging datasets",
+      "validation": "Must be 4 digits",
+      "category": "Product Classification"
+    },
+    "simple_average": {
+      "type": "float",
+      "description": "Average tariff rate as percentage",
+      "example": 1.77,
+      "source": "WITS Tariff Database",
+      "notes": "Import-weighted average duty rate",
+      "validation": "Range: 0.0 to 100.0",
+      "category": "Tariff Data",
+      "statistics": {
+        "min": 0.025,
+        "max": 77.2,
+        "mean": 7.42,
+        "median": 3.28
+      }
+    },
+    "trade_value_total": {
+      "type": "float",
+      "description": "Total trade value in USD",
+      "example": 348847200000.0,
+      "source": "UN Comtrade",
+      "notes": "Sum of all trade flows for this HS4 code",
+      "validation": "Converted from 1000 USD units",
+      "category": "Trade Data",
+      "statistics": {
+        "min": 41348.0,
+        "max": 348847200000.0,
+        "mean": 6432926292.0,
+        "median": 942258300.0
+      }
+    },
+    "year_x": {
+      "type": "integer",
+      "description": "Year of tariff data source",
+      "example": 2023,
+      "source": "WITS",
+      "notes": "Year when tariff rates were recorded",
+      "validation": "Must be 2023 for this dataset",
+      "category": "Metadata"
+    },
+    "Reporter_ISO_N": {
+      "type": "integer",
+      "description": "ISO numeric country code for tariff data",
+      "example": 840,
+      "source": "WITS",
+      "notes": "840 = United States",
+      "validation": "Standard ISO 3166-1 numeric code",
+      "category": "Metadata"
+    },
+    "ReporterName_x": {
+      "type": "string",
+      "description": "Country name for tariff data source",
+      "example": "United States",
+      "source": "WITS",
+      "notes": "Full country name for tariff data",
+      "validation": "Always 'United States' in this dataset",
+      "category": "Metadata"
+    },
+    "year_y": {
+      "type": "integer",
+      "description": "Year of trade data source",
+      "example": 2024,
+      "source": "UN Comtrade",
+      "notes": "Year when trade flows were recorded",
+      "validation": "Must be 2024 for this dataset",
+      "category": "Metadata"
+    },
+    "ReporterCode": {
+      "type": "integer",
+      "description": "Reporter country code for trade data",
+      "example": 842,
+      "source": "UN Comtrade",
+      "notes": "842 = USA including PR and USVI",
+      "validation": "Different from tariff data due to geographic scope",
+      "category": "Metadata"
+    },
+    "ReporterName_y": {
+      "type": "string",
+      "description": "Country name for trade data source",
+      "example": "USA,PR,USVI",
+      "source": "UN Comtrade",
+      "notes": "Includes Puerto Rico and US Virgin Islands",
+      "validation": "More comprehensive than tariff data",
+      "category": "Metadata"
+    }
+  },
+  "hs4_categories": {
+    "01-05": "Live animals & animal products",
+    "06-14": "Vegetable products",
+    "15": "Animal/vegetable fats & oils",
+    "16-24": "Foodstuffs, beverages, tobacco",
+    "25-27": "Mineral products",
+    "28-38": "Chemicals & allied products",
+    "39-40": "Plastics & rubber",
+    "41-43": "Raw hides, leather, furs",
+    "44-46": "Wood & wood products",
+    "47-49": "Pulp, paper, printed matter",
+    "50-63": "Textiles & textile articles",
+    "64-67": "Footwear, headgear, umbrellas",
+    "68-70": "Stone, plaster, cement, glass",
+    "71": "Pearls, precious stones, metals",
+    "72-83": "Base metals & articles",
+    "84-85": "Machinery & electrical equipment",
+    "86-89": "Transportation equipment",
+    "90-97": "Miscellaneous manufactured articles"
+  },
+  "data_quality": {
+    "limitations": [
+      "Year mismatch: Tariff data (2023) vs Trade data (2024)",
+      "Geographic inconsistency: Trade data includes PR/USVI, tariff data doesn't",
+      "Coverage gap: Only 168 of ~1,200 possible HS4 codes have both datasets",
+      "Aggregation: Multiple tariff lines per HS4 are averaged (simple average)",
+      "Currency: All values in USD (trade data converted from 1000 USD units)"
+    ],
+    "processing_notes": [
+      "HS4 normalization: Product codes standardized to 4-digit format",
+      "Missing values: Rows with NaN in key columns were dropped",
+      "Duplicate handling: Multiple tariff lines aggregated by mean",
+      "Trade aggregation: Multiple trade flows summed by HS4 code"
+    ]
+  },
+  "usage_examples": {
+    "python": {
+      "load_data": "df = pd.read_csv('merged_summary.csv')",
+      "high_tariff": "high_tariff = df[df['simple_average'] > 20]",
+      "high_trade": "high_trade = df[df['trade_value_total'] > 10_000_000_000]",
+      "tariff_revenue": "df['tariff_revenue'] = df['simple_average'] / 100 * df['trade_value_total']"
+    },
+    "visualization": [
+      "World Map: Color countries by average tariff rates",
+      "Sankey Diagrams: Flow thickness = trade value, color = tariff rate",
+      "Bar Charts: Top products by trade value or tariff rate",
+      "Scatter Plots: Trade value vs. tariff rate correlation",
+      "Heat Maps: Tariff rates by product category"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+column_name,data_type,description,example_value,source,notes,validation_rules
+hs4,string,4-digit Harmonized System product code,2709,WITS/Comtrade,Primary key for merging datasets,Must be 4 digits, represents product category
+simple_average,float,Average tariff rate as percentage,1.77,WITS Tariff Database,Import-weighted average duty rate,Range: 0.0 to 100.0
+trade_value_total,float,Total trade value in USD,348847200000.0,UN Comtrade,Sum of all trade flows for this HS4 code,Converted from 1000 USD units
+year_x,integer,Year of tariff data source,2023,WITS,Year when tariff rates were recorded,Must be 2023 for this dataset
+Reporter_ISO_N,integer,ISO numeric country code for tariff data,840,WITS,840 = United States,Standard ISO 3166-1 numeric code
+ReporterName_x,string,Country name for tariff data source,United States,WITS,Full country name for tariff data,Always "United States" in this dataset
+year_y,integer,Year of trade data source,2024,UN Comtrade,Year when trade flows were recorded,Must be 2024 for this dataset
+ReporterCode,integer,Reporter country code for trade data,842,UN Comtrade,842 = USA including PR and USVI,Different from tariff data due to geographic scope
+ReporterName_y,string,Country name for trade data source,"USA,PR,USVI",UN Comtrade,Includes Puerto Rico and US Virgin Islands,More comprehensive than tariff data
