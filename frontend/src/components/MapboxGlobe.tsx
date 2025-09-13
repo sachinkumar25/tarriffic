@@ -16,7 +16,7 @@ interface FlowData {
   tariff_revenue: number;
 }
 
-const INITIAL_CENTER: [number, number] = [0, 15]
+const INITIAL_CENTER: [number, number] = [-98, 39]
 const INITIAL_ZOOM = 1.25
 
 export default function MapboxGlobe({

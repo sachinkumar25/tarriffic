@@ -2,88 +2,75 @@ import React from "react";
 
 type Props = {
   variant?: "world" | "us";
-  className?: string; // parent controls size; e.g. "w-40 aspect-square"
+  className?: string;
 };
 
 export default function HeatmapThumb({
   variant = "world",
   className = "",
 }: Props) {
-  // Warm palette for world, flag palette for US
-  const worldBlobs = [
-    "radial-gradient(180px 130px at 20% 25%, rgba(249,115,22,0.85), rgba(249,115,22,0) 60%)", // orange
-    "radial-gradient(220px 160px at 66% 30%, rgba(234,179,8,0.85), rgba(234,179,8,0) 60%)",   // amber
-    "radial-gradient(220px 160px at 50% 72%, rgba(253,224,71,0.80), rgba(253,224,71,0) 60%)", // yellow
-    "radial-gradient(200px 150px at 82% 82%, rgba(245,158,11,0.70), rgba(245,158,11,0) 60%)", // deep amber
-  ];
+  const worldColors = ["#f59e0b", "#fbbf24", "#fcd34d"];
+  const usColors = ["#3b82f6", "#60a5fa", "#ef4444", "#f87171"];
 
-  const usBlobs = [
-    "radial-gradient(200px 150px at 66% 28%, rgba(37,99,235,0.90), rgba(37,99,235,0) 60%)",  // blue
-    "radial-gradient(180px 130px at 24% 35%, rgba(239,68,68,0.85), rgba(239,68,68,0) 60%)",  // red
-    "radial-gradient(200px 150px at 50% 72%, rgba(255,255,255,0.80), rgba(255,255,255,0) 55%)", // white highlight
-    "radial-gradient(170px 130px at 80% 82%, rgba(59,130,246,0.75), rgba(59,130,246,0) 60%)", // blue
-  ];
-
-  const blobs = (variant === "us" ? usBlobs : worldBlobs).join(",");
+  const gradientId = `heatmap-gradient-${variant}`;
 
   return (
     <div
-      className={[
-        // pure node art: no border/background; parent sizes it
-        "relative isolate overflow-hidden rounded-xl",
-        // default to square if the parent doesn't provide sizing
-        !/aspect-|h-|w-/.test(className) ? "aspect-square" : "",
-        className,
-      ].join(" ")}
+      className={`relative isolate overflow-hidden rounded-2xl shadow-lg shadow-black/30 group ${className}`}
     >
-      {/* Color blobs */}
-      <div
-        className="absolute inset-[-12%] opacity-90 blur-[12px]"
-        style={{ backgroundImage: blobs, backgroundRepeat: "no-repeat" }}
-      />
+      <svg
+        className="absolute inset-0 w-full h-full -z-10"
+        aria-hidden="true"
+      >
+        <defs>
+          <radialGradient id={gradientId}>
+            <stop
+              offset="0%"
+              stopColor={variant === "us" ? usColors[0] : worldColors[0]}
+            />
+            <stop
+              offset="100%"
+              stopColor={variant === "us" ? usColors[1] : worldColors[1]}
+            />
+          </radialGradient>
+          <filter id="heatmap-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill={`url(#${gradientId})`}
+          filter="url(#heatmap-glow)"
+        />
+      </svg>
 
-      {/* Gentle glassy highlight to match the backdrop vibe */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_45%_at_50%_-20%,rgba(255,255,255,0.16),transparent)]" />
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
 
-      {/* Variant details */}
-      {variant === "us" ? (
-        <>
-          {/* faint stripes */}
-          <div
-            className="absolute inset-0 opacity-12"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg, #ffffff 0 4px, transparent 4px 10px)",
-            }}
-          />
-          {/* small blue canton with dots */}
-          <svg className="absolute top-2 left-2 w-12 h-8 opacity-85" viewBox="0 0 48 32">
-            <rect x="0" y="0" width="48" height="32" rx="3" fill="#1d4ed8" />
-            {Array.from({ length: 3 }).map((_, r) =>
-              Array.from({ length: 5 }).map((__, c) => (
-                <circle
-                  key={`${r}-${c}`}
-                  cx={6 + c * 9}
-                  cy={6 + r * 9}
-                  r="1.2"
-                  fill="white"
-                  opacity="0.9"
-                />
-              ))
-            )}
-          </svg>
-        </>
-      ) : (
-        // subtle graticule for "world"
-        <svg className="absolute inset-0 opacity-18" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {[10, 25, 40, 60, 75, 90].map((x) => (
-            <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="white" strokeWidth="0.4" />
+      {/* Grid pattern */}
+      <div className="absolute inset-0 p-2">
+        <div className="grid grid-cols-6 grid-rows-6 w-full h-full gap-1">
+          {Array.from({ length: 36 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-[2px] opacity-20 group-hover:opacity-30 transition-opacity"
+              style={{
+                backgroundColor:
+                  variant === "us"
+                    ? usColors[(i % 12) % 4]
+                    : worldColors[(i % 12) % 3],
+                transform: `scale(${1 + Math.sin(i * 0.5) * 0.2})`,
+              }}
+            />
           ))}
-          {[15, 30, 45, 60, 75, 90].map((y) => (
-            <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="white" strokeWidth="0.4" />
-          ))}
-        </svg>
-      )}
+        </div>
+      </div>
+      {/* Glassy highlight */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1),transparent_60%)]" />
     </div>
   );
 }
