@@ -17,65 +17,65 @@ const basketItems: BasketItem[] = [
     id: "food", 
     label: "Food", 
     icon: "🍞", 
-    basePrice: 250, 
+    basePrice: 150, 
     tariff: 5,
-    description: "Grocery items, fresh produce, packaged foods"
+    description: "Grocery items, fresh produce, packaged foods (15% of household spending)"
   },
   { 
     id: "clothing", 
     label: "Clothing", 
     icon: "👕", 
-    basePrice: 120, 
+    basePrice: 50, 
     tariff: 8,
-    description: "Apparel, shoes, accessories"
+    description: "Apparel, shoes, accessories (5% of household spending)"
   },
   { 
     id: "electronics", 
     label: "Electronics", 
     icon: "📱", 
-    basePrice: 300, 
+    basePrice: 100, 
     tariff: 12,
-    description: "Smartphones, computers, home electronics"
+    description: "Smartphones, computers, home electronics (10% of household spending)"
   },
   { 
     id: "fuel", 
     label: "Fuel", 
     icon: "⛽", 
-    basePrice: 180, 
+    basePrice: 150, 
     tariff: 15,
-    description: "Gasoline, heating oil, energy costs"
+    description: "Gasoline, heating oil, energy costs (15% of household spending)"
   },
   { 
     id: "furniture", 
     label: "Furniture", 
     icon: "🪑", 
-    basePrice: 150, 
+    basePrice: 50, 
     tariff: 6,
-    description: "Home furniture, decor, household items"
+    description: "Home furniture, decor, household items (5% of household spending)"
   },
   { 
     id: "vehicles", 
     label: "Vehicles", 
     icon: "🚗", 
-    basePrice: 400, 
+    basePrice: 200, 
     tariff: 10,
-    description: "Cars, trucks, automotive parts"
+    description: "Cars, trucks, automotive parts (20% of household spending)"
   },
   { 
     id: "pharmaceuticals", 
     label: "Medicine", 
     icon: "💊", 
-    basePrice: 100, 
+    basePrice: 50, 
     tariff: 3,
-    description: "Prescription drugs, medical supplies"
+    description: "Prescription drugs, medical supplies (5% of household spending)"
   },
   { 
     id: "textiles", 
     label: "Textiles", 
     icon: "🧵", 
-    basePrice: 80, 
+    basePrice: 50, 
     tariff: 9,
-    description: "Fabrics, linens, home textiles"
+    description: "Fabrics, linens, home textiles (5% of household spending)"
   }
 ];
 
@@ -123,29 +123,36 @@ const BasketImpact: React.FC = () => {
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg border">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+        <h2 className="text-4xl font-bold text-gray-900 mb-3">
           Consumer Basket Impact
         </h2>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-700 text-xl font-medium mb-2">
           How tariffs affect household spending
+        </p>
+        <p className="text-gray-600 text-base">
+          Based on CPI-style normalized weights reflecting real household spending patterns
         </p>
       </div>
 
       {/* Running Total */}
-      <div className="text-center mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-dashed border-blue-200">
-        <div className="text-sm text-gray-600 mb-1">Monthly Basket Cost</div>
+      <div className="text-center mb-8 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 shadow-lg">
+        <div className="text-lg text-gray-700 mb-2 font-medium">Monthly Basket Cost</div>
         <div 
-          className="text-4xl font-bold text-blue-600 transition-all duration-500 ease-out"
+          className="text-5xl font-bold text-blue-600 transition-all duration-700 ease-out"
           key={totalCost} // Force re-render for animation
         >
           {formatCurrency(totalCost)}
         </div>
-        <div className="text-sm text-gray-500 mt-1">
-          {tariffShift > 0 && (
-            <span className="text-red-600">
-              +{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))} 
-              due to tariffs
-            </span>
+        <div className="text-sm text-gray-600 mt-2">
+          {tariffShift > 0 ? (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-red-600 font-semibold">
+                +{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))} 
+                due to tariffs
+              </span>
+            </div>
+          ) : (
+            <span className="text-gray-500">Base household spending</span>
           )}
         </div>
       </div>
@@ -156,7 +163,7 @@ const BasketImpact: React.FC = () => {
         <div className="absolute inset-0 border-4 border-dashed border-gray-300 rounded-3xl opacity-30"></div>
         
         <div className="relative p-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {basketItems.map((item) => {
               const adjustedTariff = item.tariff + tariffShift;
               const adjustedPrice = getAdjustedPrice(item);
@@ -170,14 +177,16 @@ const BasketImpact: React.FC = () => {
                   onMouseLeave={() => setHoveredItem(null)}
                 >
                   {/* Item Card */}
-                  <div className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 cursor-pointer ${colorClass}`}>
+                  <div className={`p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md ${colorClass}`}>
                     <div className="text-center">
-                      <div className="text-4xl mb-2">{item.icon}</div>
+                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-white/20 flex items-center justify-center text-2xl">
+                        {item.icon}
+                      </div>
                       <div className="font-semibold text-sm mb-1">{item.label}</div>
-                      <div className="text-xs opacity-75">
+                      <div className="text-xs opacity-90 font-medium">
                         {formatCurrency(adjustedPrice)}
                       </div>
-                      <div className="text-xs mt-1 font-medium">
+                      <div className="text-xs mt-1 font-bold">
                         {adjustedTariff.toFixed(1)}% tariff
                       </div>
                     </div>
@@ -211,14 +220,20 @@ const BasketImpact: React.FC = () => {
       </div>
 
       {/* Tariff Simulation Slider */}
-      <div className="mt-8 p-6 bg-gray-50 rounded-xl">
-        <div className="text-center mb-4">
-          <label className="block text-lg font-semibold text-gray-700 mb-2">
+      <div className="mt-8 p-8 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200 shadow-lg">
+        <div className="text-center mb-6">
+          <label className="block text-xl font-bold text-gray-800 mb-2">
             Simulate Tariff Increase: +{tariffShift.toFixed(1)}%
           </label>
-          <div className="flex items-center justify-center space-x-4 text-sm text-gray-600">
-            <span>No tariffs</span>
-            <span className="text-red-600">High tariffs</span>
+          <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
+            <span className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
+              No tariffs
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-500 rounded"></div>
+              High tariffs
+            </span>
           </div>
         </div>
         
@@ -246,14 +261,17 @@ const BasketImpact: React.FC = () => {
 
         {/* Impact Summary */}
         {tariffShift > 0 && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mt-6 p-6 bg-red-50 border-2 border-red-200 rounded-xl shadow-md">
             <div className="text-center">
-              <div className="text-red-800 font-semibold">
-                Tariff Impact Summary
+              <div className="text-red-800 font-bold text-lg mb-2">
+                💰 Tariff Impact Summary
               </div>
-              <div className="text-red-600 text-sm mt-1">
-                Average household pays {formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))} 
+              <div className="text-red-700 text-base font-medium">
+                Average household pays <span className="font-bold">{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))}</span> 
                 extra per month with {tariffShift.toFixed(1)}% additional tariffs
+              </div>
+              <div className="text-red-600 text-sm mt-2">
+                That's {formatCurrency((totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0)) * 12)} per year in additional costs
               </div>
             </div>
           </div>
@@ -261,22 +279,47 @@ const BasketImpact: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-          <span>Low tariffs (&lt;5%)</span>
+      <div className="mt-8 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Tariff Impact Levels</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-200 border border-yellow-300 rounded"></div>
-          <span>Medium tariffs (5-10%)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-orange-300 border border-orange-400 rounded"></div>
-          <span>High tariffs (10-15%)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 border border-red-600 rounded"></div>
-          <span>Very high tariffs (&gt;15%)</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-green-100 border border-green-200 rounded-full flex items-center justify-center">
+              <span className="text-green-700 text-xs font-bold">✅</span>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800">Low tariffs</div>
+              <div className="text-gray-600 text-xs">&lt;5%</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-yellow-200 border border-yellow-300 rounded-full flex items-center justify-center">
+              <span className="text-yellow-700 text-xs font-bold">🟨</span>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800">Medium tariffs</div>
+              <div className="text-gray-600 text-xs">5-10%</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-orange-300 border border-orange-400 rounded-full flex items-center justify-center">
+              <span className="text-orange-700 text-xs font-bold">🟧</span>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800">High tariffs</div>
+              <div className="text-gray-600 text-xs">10-15%</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-red-500 border border-red-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">🟥</span>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800">Very high tariffs</div>
+              <div className="text-gray-600 text-xs">&gt;15%</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

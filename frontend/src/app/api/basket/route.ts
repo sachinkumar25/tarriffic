@@ -14,9 +14,9 @@ export async function GET() {
           id: "food",
           label: "Food",
           icon: "🍞",
-          basePrice: 250,
+          basePrice: 150,
           tariff: 5,
-          description: "Grocery items, fresh produce, packaged foods",
+          description: "Grocery items, fresh produce, packaged foods (15% of household spending)",
           hs4Categories: ["0101", "0102", "0103", "0201", "0202", "0203"],
           lastUpdated: new Date().toISOString()
         },
@@ -24,9 +24,9 @@ export async function GET() {
           id: "clothing",
           label: "Clothing",
           icon: "👕",
-          basePrice: 120,
+          basePrice: 50,
           tariff: 8,
-          description: "Apparel, shoes, accessories",
+          description: "Apparel, shoes, accessories (5% of household spending)",
           hs4Categories: ["6101", "6102", "6103", "6201", "6202", "6203"],
           lastUpdated: new Date().toISOString()
         },
@@ -34,9 +34,9 @@ export async function GET() {
           id: "electronics",
           label: "Electronics",
           icon: "📱",
-          basePrice: 300,
+          basePrice: 100,
           tariff: 12,
-          description: "Smartphones, computers, home electronics",
+          description: "Smartphones, computers, home electronics (10% of household spending)",
           hs4Categories: ["8471", "8517", "8528", "8544", "9013", "9027"],
           lastUpdated: new Date().toISOString()
         },
@@ -44,9 +44,9 @@ export async function GET() {
           id: "fuel",
           label: "Fuel",
           icon: "⛽",
-          basePrice: 180,
+          basePrice: 150,
           tariff: 15,
-          description: "Gasoline, heating oil, energy costs",
+          description: "Gasoline, heating oil, energy costs (15% of household spending)",
           hs4Categories: ["2710", "2711", "2712", "2713", "2714", "2715"],
           lastUpdated: new Date().toISOString()
         },
@@ -54,9 +54,9 @@ export async function GET() {
           id: "furniture",
           label: "Furniture",
           icon: "🪑",
-          basePrice: 150,
+          basePrice: 50,
           tariff: 6,
-          description: "Home furniture, decor, household items",
+          description: "Home furniture, decor, household items (5% of household spending)",
           hs4Categories: ["9401", "9402", "9403", "9404", "9405"],
           lastUpdated: new Date().toISOString()
         },
@@ -64,9 +64,9 @@ export async function GET() {
           id: "vehicles",
           label: "Vehicles",
           icon: "🚗",
-          basePrice: 400,
+          basePrice: 200,
           tariff: 10,
-          description: "Cars, trucks, automotive parts",
+          description: "Cars, trucks, automotive parts (20% of household spending)",
           hs4Categories: ["8701", "8702", "8703", "8704", "8708"],
           lastUpdated: new Date().toISOString()
         },
@@ -74,9 +74,9 @@ export async function GET() {
           id: "pharmaceuticals",
           label: "Medicine",
           icon: "💊",
-          basePrice: 100,
+          basePrice: 50,
           tariff: 3,
-          description: "Prescription drugs, medical supplies",
+          description: "Prescription drugs, medical supplies (5% of household spending)",
           hs4Categories: ["3004", "3005", "3006", "9018", "9019"],
           lastUpdated: new Date().toISOString()
         },
@@ -84,19 +84,21 @@ export async function GET() {
           id: "textiles",
           label: "Textiles",
           icon: "🧵",
-          basePrice: 80,
+          basePrice: 50,
           tariff: 9,
-          description: "Fabrics, linens, home textiles",
+          description: "Fabrics, linens, home textiles (5% of household spending)",
           hs4Categories: ["5205", "5206", "5207", "5208", "5209"],
           lastUpdated: new Date().toISOString()
         }
       ],
       metadata: {
         totalCategories: 8,
+        totalBaseCost: 800,
         averageTariff: 8.5,
+        cpiStyleWeights: true,
         lastUpdated: new Date().toISOString(),
-        dataSource: "Static data - can be connected to real HS4 database",
-        version: "1.0.0"
+        dataSource: "CPI-style normalized basket - can be connected to real HS4 database",
+        version: "2.0.0"
       }
     };
 
