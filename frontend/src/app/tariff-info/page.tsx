@@ -14,7 +14,7 @@ export default function TariffInfoPage() {
         {/* Top nav/back */}
         <div className="mb-6 text-sm">
           <Link href="/" className="text-blue-700 hover:underline">
-            ← Back to Globe
+            ← Back to Home
           </Link>
         </div>
 
