@@ -29,6 +29,7 @@ export default function MapboxGlobe({
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const [loading, setLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [selectedFlow, setSelectedFlow] = useState<FlowData | null>(null)
   const [analysis, setAnalysis] = useState<string>("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -38,82 +39,9 @@ export default function MapboxGlobe({
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [showFilter, setShowFilter] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isMapReady, setIsMapReady] = useState(false)
 
-  // Function to load map data
-  const loadMapData = useCallback(async (countries?: string[]) => {
-    const map = mapRef.current
-    if (!map || !map.isStyleLoaded()) {
-      return
-    }
-    
-    setLoading(true)
-    try {
-      const data = await generateTariffGeoJSON(countries)
-
-      // Update or create sources
-      if (map.getSource('tariffs-lines')) {
-        (map.getSource('tariffs-lines') as mapboxgl.GeoJSONSource).setData(data.lines)
-      } else {
-        map.addSource('tariffs-lines', {
-          type: 'geojson',
-          data: data.lines,
-        })
-      }
-      
-      if (map.getSource('tariffs-arrows')) {
-        (map.getSource('tariffs-arrows') as mapboxgl.GeoJSONSource).setData(data.arrows)
-      } else {
-        map.addSource('tariffs-arrows', {
-          type: 'geojson',
-          data: data.arrows,
-        })
-      }
-
-      // Add layers if they don't exist
-      if (!map.getLayer('tariff-lines')) {
-        map.addLayer({
-          id: 'tariff-lines',
-          type: 'line',
-          source: 'tariffs-lines',
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: {
-            'line-width': 3, // Slightly thicker for easier clicking
-            'line-color': 'black',
-            'line-opacity': 0.8,
-          },
-        })
-      }
-
-      if (!map.getLayer('tariff-arrows')) {
-        map.addLayer({
-          id: 'tariff-arrows',
-          type: 'symbol',
-          source: 'tariffs-arrows',
-          layout: {
-            'text-field': '▲',
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': 24,
-            'text-rotate': ['get', 'bearing'],
-            'text-rotation-alignment': 'map',
-            'text-pitch-alignment': 'map',
-            'text-allow-overlap': true,
-            'text-ignore-placement': true,
-          },
-          paint: {
-            'text-color': 'black',
-          },
-        })
-      }
-
-    } catch (error) {
-      console.error('Error loading map data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // Function to fetch analysis from API
-  const fetchAnalysis = async (flow: FlowData) => {
+  const fetchAnalysis = useCallback(async (flow: FlowData) => {
     setIsAnalyzing(true)
     try {
       const res = await fetch("/api/analyzeFlow", {
@@ -133,7 +61,46 @@ export default function MapboxGlobe({
     } finally {
       setIsAnalyzing(false)
     }
-  }
+  }, [])
+
+  const handleFlowClick = useCallback(async (flow: FlowData) => {
+    setSelectedFlow(flow)
+    setShowDrawer(true)
+    setAnalysis("")
+    await fetchAnalysis(flow)
+  }, [fetchAnalysis])
+
+  const handleRouteClick = useCallback((e: mapboxgl.MapMouseEvent) => {
+    if (e.features && e.features.length > 0) {
+      const feature = e.features[0]
+      const props = feature.properties
+      if (props) {
+        const flow: FlowData = {
+          reporter: props.reporter || 'United States',
+          partner: props.partner || 'Unknown',
+          product: props.product || 'Unknown Product',
+          hs4: props.hs4 || '',
+          year: props.year || 2022,
+          trade_value: props.tradeValue || 0,
+          tariff_rate: props.tariffRate || 0,
+          tariff_revenue: props.tariff_revenue || 0,
+        }
+        handleFlowClick(flow)
+      }
+    }
+  }, [handleFlowClick])
+
+  const handleMouseEnter = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.getCanvas().style.cursor = 'pointer'
+    }
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.getCanvas().style.cursor = ''
+    }
+  }, [])
 
   // Helper function to get user-friendly product category name
   const getProductCategoryName = (hs4: string) => {
@@ -224,18 +191,24 @@ export default function MapboxGlobe({
     }).filter(Boolean)
   }
 
-  // Handle flow click
-  const handleFlowClick = useCallback(async (flow: FlowData) => {
-    setSelectedFlow(flow)
-    setShowDrawer(true)
-    setAnalysis("")
-    await fetchAnalysis(flow)
-  }, [])
-
+  // Initialize with top 15 countries on first load
   useEffect(() => {
-    if (!mapContainer.current) return
+    const initializeFilter = async () => {
+      if (isInitialLoad) {
+        const allCountries = await getAllCountries()
+        const top15 = allCountries.slice(0, 15).map(c => c.iso)
+        setSelectedCountries(top15)
+        setIsInitialLoad(false)
+      }
+    }
+    initializeFilter()
+  }, [isInitialLoad])
+  
+  // Effect for map initialization (runs once)
+  useEffect(() => {
+    if (mapRef.current || !mapContainer.current) return;
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string;
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
@@ -246,216 +219,105 @@ export default function MapboxGlobe({
       bearing: 0,
       antialias: true,
       pitchWithRotate: false,
-    })
-    mapRef.current = map
+    });
+    mapRef.current = map;
 
-    requestAnimationFrame(() => {
-      if (mapRef.current) {
-        mapRef.current.resize()
-        mapRef.current.triggerRepaint()
-      }
-    })
-
-    map.once('load', () => {
-      if (mapRef.current) {
-        mapRef.current.resize()
-        mapRef.current.triggerRepaint()
-      }
-    })
-
-    map.on('style.load', () => {
+    map.on('load', () => {
       if (transparentBackground) {
-        // Set space to transparent but keep atmosphere visible
         map.setFog({
           color: 'rgb(186, 210, 235)',
           'high-color': 'rgb(36, 92, 223)',
           'horizon-blend': 0.02,
-          'space-color': 'rgba(0,0,0,0)', // Only make space transparent
+          'space-color': 'rgba(0,0,0,0)',
           'star-intensity': 0,
-        })
-        // Make canvas background transparent
-        map.getCanvas().style.background = 'transparent'
+        });
+        map.getCanvas().style.background = 'transparent';
       }
-
-      // Trigger data loading once map is ready
-      if (selectedCountries.length > 0) {
-        loadMapData(selectedCountries)
-      }
-    })
-
-    const ro = new ResizeObserver(() => {
-      if (mapRef.current) {
-        mapRef.current.resize()
-        mapRef.current.triggerRepaint()
-      }
-    })
-    if (mapContainer.current) {
-      ro.observe(mapContainer.current)
-    }
-
-    return () => {
-      ro.disconnect()
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-    }
-  }, [transparentBackground, handleFlowClick])
-
-  // Initialize with top 15 countries on first load
-  useEffect(() => {
-    const initializeFilter = async () => {
-      if (isInitialLoad) {
-        const allCountries = await getAllCountries()
-        const top15 = allCountries.slice(0, 15).map(c => c.iso)
-        setSelectedCountries(top15)
-        setIsInitialLoad(false)
-        
-        // Fallback: Try to load data after a short delay to ensure map is ready
-        setTimeout(() => {
-          const map = mapRef.current
-          if (map && map.isStyleLoaded() && top15.length > 0) {
-            loadMapData(top15)
-          }
-        }, 1000)
-      }
-    }
-    initializeFilter()
-  }, [isInitialLoad, loadMapData])
-
-  // Reload map data when selected countries change
-  useEffect(() => {
-    if (mapRef.current && mapRef.current.isStyleLoaded()) {
-      loadMapData(selectedCountries)
-    }
-  }, [selectedCountries, loadMapData])
-
-  // Ensure data loads when both map and countries are ready
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || selectedCountries.length === 0) return
-
-    const handleStyleLoad = () => {
-      loadMapData(selectedCountries)
-    }
-
-    if (map.isStyleLoaded()) {
-      handleStyleLoad()
-    } else {
-      map.on('style.load', handleStyleLoad)
-    }
-
-    return () => {
-      if (map) {
-        map.off('style.load', handleStyleLoad)
-      }
-    }
-  }, [selectedCountries, loadMapData])
-
-  // Add click handlers after map is ready
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !map.isStyleLoaded()) return
-
-    const handleRouteClick = (e: mapboxgl.MapMouseEvent) => {
-      if (e.features && e.features.length > 0) {
-        const feature = e.features[0]
-        const props = feature.properties
-        if (props) {
-          const flow: FlowData = {
-            reporter: props.reporter || 'United States',
-            partner: props.partner || 'Unknown',
-            product: props.product || 'Unknown Product',
-            hs4: props.hs4 || '',
-            year: props.year || 2022,
-            trade_value: props.tradeValue || 0,
-            tariff_rate: props.tariffRate || 0,
-            tariff_revenue: props.tariff_revenue || 0,
-          }
-          handleFlowClick(flow)
-        }
-      }
-    }
-
-    const handleMouseEnter = () => {
-      const currentMap = mapRef.current
-      if (currentMap) {
-        currentMap.getCanvas().style.cursor = 'pointer'
-      }
-    }
-
-    const handleMouseLeave = () => {
-      const currentMap = mapRef.current
-      if (currentMap) {
-        currentMap.getCanvas().style.cursor = ''
-      }
-    }
-
-    let timeoutId: NodeJS.Timeout | null = null
+      setIsMapReady(true);
+    });
     
-    // Wait for the layers to be added, then attach handlers
-    const checkAndAttachHandlers = () => {
-      const currentMap = mapRef.current
-      if (!currentMap || !currentMap.isStyleLoaded()) return
-
-      try {
-        const hasLines = currentMap.getLayer('tariff-lines')
-        const hasArrows = currentMap.getLayer('tariff-arrows')
-        
-        if (hasLines && hasArrows) {
-          // Remove existing handlers
-          currentMap.off('click', 'tariff-lines', handleRouteClick)
-          currentMap.off('click', 'tariff-arrows', handleRouteClick)
-          currentMap.off('mouseenter', 'tariff-lines', handleMouseEnter)
-          currentMap.off('mouseenter', 'tariff-arrows', handleMouseEnter)
-          currentMap.off('mouseleave', 'tariff-lines', handleMouseLeave)
-          currentMap.off('mouseleave', 'tariff-arrows', handleMouseLeave)
-          
-          // Add handlers to both lines and arrows
-          currentMap.on('click', 'tariff-lines', handleRouteClick)
-          currentMap.on('click', 'tariff-arrows', handleRouteClick)
-          currentMap.on('mouseenter', 'tariff-lines', handleMouseEnter)
-          currentMap.on('mouseenter', 'tariff-arrows', handleMouseEnter)
-          currentMap.on('mouseleave', 'tariff-lines', handleMouseLeave)
-          currentMap.on('mouseleave', 'tariff-arrows', handleMouseLeave)
-        } else {
-          // If layers don't exist yet, try again after a short delay
-          timeoutId = setTimeout(checkAndAttachHandlers, 100)
-        }
-      } catch (error) {
-        // Map might be destroyed, ignore the error
-        console.warn('Map layer check failed:', error)
-      }
-    }
-
-    checkAndAttachHandlers()
+    const ro = new ResizeObserver(() => map.resize());
+    ro.observe(mapContainer.current);
 
     return () => {
-      // Clear any pending timeout
-      if (timeoutId) {
-        clearTimeout(timeoutId)
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [transparentBackground]);
+
+  // Effect for data loading and layer updates
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!isMapReady || !map) return;
+
+    const updateMapData = async () => {
+      setLoading(true);
+      setDataLoaded(false);
+
+      const geojsonData = await generateTariffGeoJSON(selectedCountries);
+
+      if (map.getSource('tariffs-lines')) {
+        (map.getSource('tariffs-lines') as mapboxgl.GeoJSONSource).setData(geojsonData.lines);
+        (map.getSource('tariffs-arrows') as mapboxgl.GeoJSONSource).setData(geojsonData.arrows);
+      } else {
+        map.addSource('tariffs-lines', { type: 'geojson', data: geojsonData.lines });
+        map.addSource('tariffs-arrows', { type: 'geojson', data: geojsonData.arrows });
+        map.addLayer({
+          id: 'tariff-lines',
+          type: 'line',
+          source: 'tariffs-lines',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-width': 3, 'line-color': 'black', 'line-opacity': 0.8 },
+        });
+        map.addLayer({
+          id: 'tariff-arrows',
+          type: 'symbol',
+          source: 'tariffs-arrows',
+          layout: {
+            'text-field': '▲',
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-size': 24,
+            'text-rotate': ['get', 'bearing'],
+            'text-rotation-alignment': 'map',
+            'text-pitch-alignment': 'map',
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+          },
+          paint: { 'text-color': 'black' },
+        });
       }
       
-      const currentMap = mapRef.current
-      if (!currentMap) return
-      
-      try {
-        if (currentMap.getLayer && currentMap.getLayer('tariff-lines')) {
-          currentMap.off('click', 'tariff-lines', handleRouteClick)
-          currentMap.off('mouseenter', 'tariff-lines', handleMouseEnter)
-          currentMap.off('mouseleave', 'tariff-lines', handleMouseLeave)
-        }
-        if (currentMap.getLayer && currentMap.getLayer('tariff-arrows')) {
-          currentMap.off('click', 'tariff-arrows', handleRouteClick)
-          currentMap.off('mouseenter', 'tariff-arrows', handleMouseEnter)
-          currentMap.off('mouseleave', 'tariff-arrows', handleMouseLeave)
-        }
-      } catch (error) {
-        // Map might be destroyed, ignore cleanup errors
-        console.warn('Map cleanup failed:', error)
-      }
+      setLoading(false);
+      setDataLoaded(true);
+    };
+
+    if (selectedCountries.length > 0) {
+      updateMapData();
     }
-  }, [handleFlowClick, selectedCountries]) // Re-attach when countries change
+  }, [isMapReady, selectedCountries]);
+
+  // Effect for attaching event listeners
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!isMapReady || !dataLoaded || !map) return;
+
+    map.on('click', 'tariff-lines', handleRouteClick);
+    map.on('click', 'tariff-arrows', handleRouteClick);
+    map.on('mouseenter', 'tariff-lines', handleMouseEnter);
+    map.on('mouseenter', 'tariff-arrows', handleMouseEnter);
+    map.on('mouseleave', 'tariff-lines', handleMouseLeave);
+    map.on('mouseleave', 'tariff-arrows', handleMouseLeave);
+
+    return () => {
+      map.off('click', 'tariff-lines', handleRouteClick);
+      map.off('click', 'tariff-arrows', handleRouteClick);
+      map.off('mouseenter', 'tariff-lines', handleMouseEnter);
+      map.off('mouseenter', 'tariff-arrows', handleMouseEnter);
+      map.off('mouseleave', 'tariff-lines', handleMouseLeave);
+      map.off('mouseleave', 'tariff-arrows', handleMouseLeave);
+    };
+  }, [isMapReady, dataLoaded, handleRouteClick, handleMouseEnter, handleMouseLeave]);
 
   return (
     <div className="w-full h-full relative">

@@ -291,3 +291,53 @@ export const getAllCountries = async (): Promise<CountryTradeData[]> => {
     return []
   }
 }
+
+export interface TariffDataPoint {
+  year: number
+  rate: number
+}
+
+export const getTariffRateHistory = async (): Promise<TariffDataPoint[]> => {
+  try {
+    const res = await fetch('/us_tariff_history.csv')
+    if (!res.ok) {
+      throw new Error(`Failed to fetch CSV: ${res.status} ${res.statusText}`)
+    }
+    const text = await res.text()
+
+    const result = Papa.parse<string[]>(text, {
+      header: false,
+      skipEmptyLines: true,
+    })
+
+    const allRows = result.data
+
+    if (allRows.length < 5) {
+      console.error('CSV data is not in the expected format.')
+      return []
+    }
+
+    // The data from the World Bank CSV has metadata in the first 4 rows.
+    // Row 3 (0-indexed) contains the headers (years).
+    // Row 4 contains the values for the United States.
+    const yearHeaders = allRows[3]
+    const rateValues = allRows[4]
+
+    const data: TariffDataPoint[] = []
+
+    // The first 4 columns are metadata, so we start from the 5th column (index 4).
+    for (let i = 4; i < yearHeaders.length; i++) {
+      const year = parseInt(yearHeaders[i], 10)
+      const rate = parseFloat(rateValues[i])
+
+      if (!isNaN(year) && !isNaN(rate)) {
+        data.push({ year, rate })
+      }
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error getting tariff rate history:', error)
+    return []
+  }
+}

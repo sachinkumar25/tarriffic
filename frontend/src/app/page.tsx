@@ -174,20 +174,26 @@ export default function Home() {
               )}
             >
               {/* US Heatmap on the left */}
-              <div className="flex flex-col items-center gap-2">
+              <Link
+                href="/tariff-trends"
+                className="flex flex-col items-center gap-2"
+              >
                 <div className="w-[200px] aspect-square">
-                  <HeatmapThumb
-                    variant="us"
+                  <ChartThumb
+                    variant="line"
                     className="h-full w-full rounded-2xl"
                   />
                 </div>
                 <p className="text-lg font-semibold text-gray-200">
                   U.S. Tariff Rates
                 </p>
-              </div>
+              </Link>
 
               {/* World Heatmap on the right */}
-              <Link href="/heatmap" className="flex flex-col items-center gap-2">
+              <Link
+                href="/heatmap"
+                className="flex flex-col items-center gap-2"
+              >
                 <div className="w-[200px] aspect-square">
                   <HeatmapThumb
                     variant="world"
