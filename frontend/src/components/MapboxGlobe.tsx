@@ -15,7 +15,7 @@ export default function MapboxGlobe({
 }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const [loading, setLoading] = useState(false) // only for data, not a full-screen overlay
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -34,34 +34,30 @@ export default function MapboxGlobe({
     })
     mapRef.current = map
 
-    // Ensure a first render even if the container finished sizing just after init
     requestAnimationFrame(() => {
       map.resize()
       map.triggerRepaint()
     })
 
     map.once('load', () => {
-      // One more resize after tiles/style are ready
       map.resize()
       map.triggerRepaint()
     })
 
     map.on('style.load', () => {
       if (transparentBackground) {
+        // Set space to transparent but keep atmosphere visible
         map.setFog({
-          color: 'rgba(0,0,0,0)',
-          'high-color': 'rgba(0,0,0,0)',
-          'horizon-blend': 0,
-          'space-color': 'rgba(0,0,0,0)',
+          color: 'rgb(186, 210, 235)',
+          'high-color': 'rgb(36, 92, 223)',
+          'horizon-blend': 0.02,
+          'space-color': 'rgba(0,0,0,0)', // Only make space transparent
           'star-intensity': 0,
         })
-        const bg = map.getStyle().layers?.find(l => l.type === 'background')?.id
-        if (bg) map.setPaintProperty(bg, 'background-color', 'rgba(0,0,0,0)')
-        // and make the canvas itself transparent just in case
+        // Make canvas background transparent
         map.getCanvas().style.background = 'transparent'
       }
 
-      // OPTIONAL: load your trade data without blocking the render
       setLoading(true)
       generateTariffGeoJSON()
         .then(data => {
@@ -142,7 +138,6 @@ export default function MapboxGlobe({
 
   return (
     <div className="w-full h-full relative">
-      {/* small, non-blocking loader in the corner */}
       {loading && (
         <div className="absolute right-2 bottom-2 text-xs text-white/70 pointer-events-none">
           loading data…
