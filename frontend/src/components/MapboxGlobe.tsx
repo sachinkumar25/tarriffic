@@ -23,8 +23,10 @@ const INITIAL_ZOOM = 1.25
 
 export default function MapboxGlobe({
   transparentBackground = true,
+  showFilterButton = true,
 }: {
   transparentBackground?: boolean
+  showFilterButton?: boolean
 }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -328,25 +330,29 @@ export default function MapboxGlobe({
       )}
       
       {/* Filter Button */}
-      <button
-        onClick={() => setShowFilter(true)}
-        className="absolute top-4 left-4 z-40 bg-gray-900/90 backdrop-blur-sm text-white p-3 rounded-lg border border-gray-600 hover:bg-gray-800/90 transition-all shadow-lg flex items-center gap-2"
-      >
-        <Filter size={18} />
-        <span className="text-sm font-medium">
-          {selectedCountries.length} Countries
-        </span>
-      </button>
+      {showFilterButton && (
+        <button
+          onClick={() => setShowFilter(true)}
+          className="absolute top-4 left-4 z-40 bg-gray-900/90 backdrop-blur-sm text-white p-3 rounded-lg border border-gray-600 hover:bg-gray-800/90 transition-all shadow-lg flex items-center gap-2"
+        >
+          <Filter size={18} />
+          <span className="text-sm font-medium">
+            {selectedCountries.length} Countries
+          </span>
+        </button>
+      )}
 
       <div ref={mapContainer} className="w-full h-full" />
       
       {/* Country Filter Sidebar */}
-      <CountryFilter
-        selectedCountries={selectedCountries}
-        onCountriesChange={setSelectedCountries}
-        isOpen={showFilter}
-        onClose={() => setShowFilter(false)}
-      />
+      {showFilterButton && (
+        <CountryFilter
+          selectedCountries={selectedCountries}
+          onCountriesChange={setSelectedCountries}
+          isOpen={showFilter}
+          onClose={() => setShowFilter(false)}
+        />
+      )}
       
       {/* Side Drawer for Analysis */}
       {showDrawer && selectedFlow && (

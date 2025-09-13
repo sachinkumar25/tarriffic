@@ -30,6 +30,7 @@ interface HeatmapProps {
   projection?: 'globe' | 'mercator';
   showHotspots?: boolean;
   onDataLoaded?: (data: CountryData[]) => void;
+  transparentBackground?: boolean;
 }
 
 const INITIAL_CENTER: [number, number] = [0, 15]
@@ -39,7 +40,8 @@ export default function Heatmap({
   metric = 'avg_tariff',
   projection = 'globe',
   showHotspots = true,
-  onDataLoaded = () => {}
+  onDataLoaded = () => {},
+  transparentBackground = true
 }: HeatmapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -93,7 +95,7 @@ export default function Heatmap({
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/dark-v11',
       projection: { name: projection },
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
@@ -104,6 +106,17 @@ export default function Heatmap({
     mapRef.current = map
 
     map.once('load', () => {
+      if (transparentBackground) {
+        map.setFog({
+          color: 'rgb(186, 210, 235)',
+          'high-color': 'rgb(36, 92, 223)',
+          'horizon-blend': 0.02,
+          'space-color': 'rgba(0,0,0,0)',
+          'star-intensity': 0,
+        });
+        map.getCanvas().style.background = 'transparent';
+      }
+      
       // Load world countries GeoJSON
       map.addSource('countries', {
         type: 'geojson',
@@ -153,7 +166,19 @@ export default function Heatmap({
       map.remove()
       mapRef.current = null
     }
-  }, [geojsonData, projection]) // Now depends on geojsonData and projection
+  }, [geojsonData, transparentBackground]) // Remove projection from dependencies since we'll handle it separately
+
+  // Handle projection changes
+  useEffect(() => {
+    if (!mapRef.current) return
+    
+    const map = mapRef.current
+    if (projection === 'globe') {
+      map.setProjection('globe')
+    } else {
+      map.setProjection('mercator')
+    }
+  }, [projection])
 
   // Fetch country data once on mount
   useEffect(() => {

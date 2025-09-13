@@ -166,7 +166,7 @@ export default function Home() {
                   : "opacity-0 pointer-events-none"
               )}
             >
-              <MapboxGlobe transparentBackground />
+              <MapboxGlobe transparentBackground showFilterButton={false} />
             </Link>
 
             {/* Heatmaps */}
