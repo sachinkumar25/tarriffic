@@ -22,22 +22,24 @@ export async function POST(request: NextRequest) {
     if (error || !data) {
       console.log("No pre-stored analysis found, using fallback:", error?.message || "No data");
       
-      // Fallback: Create a basic analysis if not found in database
-      const fallbackAnalysis = `**Trade Analysis: ${flow.reporter} ↔ ${flow.partner}**
+      // Fallback: Create a user-friendly analysis if not found in database
+      const fallbackAnalysis = `**What This Trade Route Means**
 
-**Product:** ${flow.product} (HS4 Code: ${flow.hs4})
-**Year:** ${flow.year}
+**Why This Matters:**
+The United States and ${flow.partner} have a major trading relationship worth $${(flow.trade_value / 1e9).toFixed(1)} billion annually. This trade supports jobs, provides consumers with goods, and generates government revenue.
 
-**Key Metrics:**
-• Trade Value: $${flow.trade_value?.toLocaleString() || 'N/A'}
-• Tariff Rate: ${flow.tariff_rate || 'N/A'}%
-• Estimated Tariff Revenue: $${flow.tariff_revenue?.toLocaleString() || 'N/A'}
+**The Import Tax (Tariff):**
+• The U.S. charges a ${flow.tariff_rate?.toFixed(1) || 'N/A'}% tax on these imports
+• This adds about $${(flow.tariff_revenue / 1e9).toFixed(2)} billion to government revenue each year
+• The tax helps protect American businesses but makes imports more expensive
 
-**Economic Impact:**
-This trade relationship represents a significant bilateral commerce flow with important tariff implications. The ${flow.tariff_rate || 'applied'}% tariff rate affects pricing, competitiveness, and supply chain decisions for businesses in both countries.
+**Impact on You:**
+• Higher import taxes can mean higher prices for consumers
+• American companies in similar industries get protection from foreign competition
+• The government uses this tax revenue for public services and programs
 
-**Trade Policy Context:**
-Tariffs on this product category reflect broader trade policy objectives including domestic industry protection, revenue generation, and strategic economic positioning in global markets.`;
+**The Bigger Picture:**
+This trade relationship is part of America's broader economic strategy. Tariffs balance protecting domestic industries with maintaining beneficial trade relationships that provide consumers with diverse, affordable products.`;
 
       return NextResponse.json({
         status: "success",

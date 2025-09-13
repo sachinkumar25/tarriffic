@@ -16,11 +16,19 @@ const getCountryCoords = async (
   isoCode: string,
 ): Promise<[number, number] | null> => {
   if (!isoCode || isoCode.toLowerCase() === 'wld') return null
+  
+  // Check hardcoded coordinates first for faster loading
+  if (COUNTRY_COORDS[isoCode]) {
+    return COUNTRY_COORDS[isoCode]
+  }
+  
   try {
     const response = await fetch(
       `https://restcountries.com/v3.1/alpha/${isoCode}`,
     )
-    if (!response.ok) return null
+    if (!response.ok) {
+      return null
+    }
     const data: CountryInfo[] = await response.json()
     if (data && data[0] && data[0].latlng) {
       const [lat, lon] = data[0].latlng
@@ -34,6 +42,25 @@ const getCountryCoords = async (
 }
 
 const USA_COORDS: [number, number] = [-98.5795, 39.8283] // Center of USA
+
+// Hardcoded coordinates for major trading partners to avoid API delays
+const COUNTRY_COORDS: Record<string, [number, number]> = {
+  'CAN': [-106.3468, 56.1304], // Canada
+  'MEX': [-102.5528, 23.6345], // Mexico
+  'CHN': [104.1954, 35.8617], // China
+  'JPN': [138.2529, 36.2048], // Japan
+  'DEU': [10.4515, 51.1657], // Germany
+  'GBR': [-3.4360, 55.3781], // United Kingdom
+  'KOR': [127.7669, 35.9078], // South Korea
+  'FRA': [2.2137, 46.2276], // France
+  'ITA': [12.5674, 41.8719], // Italy
+  'IND': [78.9629, 20.5937], // India
+  'BRA': [-51.9253, -14.2350], // Brazil
+  'NLD': [5.2913, 52.1326], // Netherlands
+  'CHE': [8.2275, 46.8182], // Switzerland
+  'BEL': [4.4699, 50.5039], // Belgium
+  'ESP': [-3.7492, 40.4637], // Spain
+}
 
 // Function to calculate bearing
 const calculateBearing = (
@@ -56,7 +83,15 @@ const calculateBearing = (
   return (brng + 360) % 360
 }
 
-export const generateTariffGeoJSON = async () => {
+export interface CountryTradeData {
+  iso: string
+  name: string
+  totalTradeValue: number
+  avgTariff: number
+  rank: number
+}
+
+export const generateTariffGeoJSON = async (selectedCountries?: string[]) => {
   try {
     const res = await fetch('/expanded_summary.csv')
     if (!res.ok) {
@@ -106,14 +141,19 @@ export const generateTariffGeoJSON = async () => {
     value.avgTariff = sum / value.tariffs.length
   })
 
-  // Get all countries sorted by trade value (all 212 countries)
-  const sortedCountries = Array.from(tradeByCountry.entries())
+  // Get all countries sorted by trade value
+  const allCountriesSorted = Array.from(tradeByCountry.entries())
     .sort(([, a], [, b]) => b.totalTradeValue - a.totalTradeValue)
+
+  // Filter countries based on selection (show nothing if no countries selected)
+  const countriesToShow = selectedCountries && selectedCountries.length > 0 
+    ? allCountriesSorted.filter(([iso]) => selectedCountries.includes(iso))
+    : [] // Show nothing when no countries are selected
 
   const lineFeatures = []
   const arrowFeatures = []
 
-  for (const [iso, data] of sortedCountries) {
+  for (const [iso, data] of countriesToShow) {
     const partnerCoords = await getCountryCoords(iso)
     if (partnerCoords) {
       const coordinates: [[number, number], [number, number]] = [
@@ -126,6 +166,11 @@ export const generateTariffGeoJSON = async () => {
           tariffRate: data.avgTariff,
           tradeValue: data.totalTradeValue,
           partner: data.partnerName,
+          reporter: 'United States',
+          product: `HS4 ${iso}`,
+          hs4: iso,
+          year: 2022,
+          tariff_revenue: (data.totalTradeValue * data.avgTariff) / 100,
         },
         geometry: {
           type: 'LineString' as const,
@@ -175,5 +220,74 @@ export const generateTariffGeoJSON = async () => {
         features: [],
       },
     }
+  }
+}
+
+// Function to get all countries for the filter
+export const getAllCountries = async (): Promise<CountryTradeData[]> => {
+  try {
+    const res = await fetch('/expanded_summary.csv')
+    if (!res.ok) {
+      throw new Error(`Failed to fetch CSV: ${res.status} ${res.statusText}`)
+    }
+    const text = await res.text()
+
+    const allRows = Papa.parse<ExpandedSummaryRow>(text, {
+      header: true,
+      skipEmptyLines: true,
+    }).data
+
+    // Group by partner country and sum trade value
+    const tradeByCountry = new Map<
+      string,
+      {
+        totalTradeValue: number
+        avgTariff: number
+        tariffs: number[]
+        partnerName: string
+      }
+    >()
+
+    for (const row of allRows) {
+      if (row.partner_iso && row.partner_iso.toLowerCase() !== 'wld') {
+        const tradeValue = parseFloat(row.trade_value_total)
+        const tariffRate = parseFloat(row.simple_average)
+        if (!isNaN(tradeValue) && !isNaN(tariffRate)) {
+          if (!tradeByCountry.has(row.partner_iso)) {
+            tradeByCountry.set(row.partner_iso, {
+              totalTradeValue: 0,
+              avgTariff: 0,
+              tariffs: [],
+              partnerName: row.partner_name,
+            })
+          }
+          const countryData = tradeByCountry.get(row.partner_iso)!
+          countryData.totalTradeValue += tradeValue
+          countryData.tariffs.push(tariffRate)
+        }
+      }
+    }
+
+    // Calculate average tariff for each country
+    tradeByCountry.forEach(value => {
+      const sum = value.tariffs.reduce((a, b) => a + b, 0)
+      value.avgTariff = sum / value.tariffs.length
+    })
+
+    // Return all countries sorted by trade value with rank
+    const allCountriesSorted = Array.from(tradeByCountry.entries())
+      .sort(([, a], [, b]) => b.totalTradeValue - a.totalTradeValue)
+      .map(([iso, data], index) => ({
+        iso,
+        name: data.partnerName,
+        totalTradeValue: data.totalTradeValue,
+        avgTariff: data.avgTariff,
+        rank: index + 1
+      }))
+
+    return allCountriesSorted
+  } catch (error) {
+    console.error('Error getting all countries:', error)
+    return []
   }
 }
