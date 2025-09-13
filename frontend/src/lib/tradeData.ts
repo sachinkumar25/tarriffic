@@ -1,16 +1,11 @@
 import Papa from 'papaparse'
 
-interface TradeDataRow {
-  ReporterName: string
-  ProductCode: string
-  PartnerName: string
-  PartnerISO3: string
-  'TradeValue in 1000 USD': string
-}
-
-interface TariffDataRow {
-  hs4: string
+interface ExpandedSummaryRow {
+  partner_iso: string
+  trade_value_total: string
   simple_average: string
+  partner_name: string
+  hs4: string
 }
 
 interface CountryInfo {
@@ -62,87 +57,88 @@ const calculateBearing = (
 }
 
 export const generateTariffGeoJSON = async () => {
-  const [tradeRes, tariffRes] = await Promise.all([
-    fetch('/trade_data.csv'),
-    fetch('/tariff_data.csv'),
-  ])
+  const res = await fetch('/expanded_summary.csv')
+  const text = await res.text()
 
-  const [tradeText, tariffText] = await Promise.all([
-    tradeRes.text(),
-    tariffRes.text(),
-  ])
-
-  const tradeData = Papa.parse<TradeDataRow>(tradeText, {
-    header: true,
-    skipEmptyLines: true,
-  }).data
-  const tariffData = Papa.parse<TariffDataRow>(tariffText, {
+  const allRows = Papa.parse<ExpandedSummaryRow>(text, {
     header: true,
     skipEmptyLines: true,
   }).data
 
-  const tariffMap = new Map<string, number>()
-  for (const row of tariffData) {
-    tariffMap.set(row.hs4, parseFloat(row.simple_average))
+  // Group by partner country and sum trade value
+  const tradeByCountry = new Map<
+    string,
+    {
+      totalTradeValue: number
+      avgTariff: number
+      tariffs: number[]
+      partnerName: string
+    }
+  >()
+
+  for (const row of allRows) {
+    if (row.partner_iso && row.partner_iso.toLowerCase() !== 'wld') {
+      const tradeValue = parseFloat(row.trade_value_total)
+      const tariffRate = parseFloat(row.simple_average)
+      if (!isNaN(tradeValue) && !isNaN(tariffRate)) {
+        if (!tradeByCountry.has(row.partner_iso)) {
+          tradeByCountry.set(row.partner_iso, {
+            totalTradeValue: 0,
+            avgTariff: 0,
+            tariffs: [],
+            partnerName: row.partner_name,
+          })
+        }
+        const countryData = tradeByCountry.get(row.partner_iso)!
+        countryData.totalTradeValue += tradeValue
+        countryData.tariffs.push(tariffRate)
+      }
+    }
   }
 
-  const availableHs4Codes = new Set(tariffMap.keys())
+  // Calculate average tariff for each country
+  tradeByCountry.forEach(value => {
+    const sum = value.tariffs.reduce((a, b) => a + b, 0)
+    value.avgTariff = sum / value.tariffs.length
+  })
+
+  // Get top 25 countries by trade value
+  const sortedCountries = Array.from(tradeByCountry.entries())
+    .sort(([, a], [, b]) => b.totalTradeValue - a.totalTradeValue)
+    .slice(0, 25)
+
   const lineFeatures = []
   const arrowFeatures = []
 
-  // Filter trade data to only include products with available tariff info
-  const relevantTradeData = tradeData.filter(
-    row =>
-      row.PartnerISO3 &&
-      row.PartnerISO3.toLowerCase() !== 'wld' &&
-      availableHs4Codes.has(row.ProductCode.padStart(4, '0')),
-  )
-
-  // Sort by trade value and take top 25
-  const sortedTradeData = relevantTradeData
-    .sort(
-      (a, b) =>
-        parseFloat(b['TradeValue in 1000 USD']) -
-        parseFloat(a['TradeValue in 1000 USD']),
-    )
-    .slice(0, 25)
-
-  for (const row of sortedTradeData) {
-    const tariffRate = tariffMap.get(row.ProductCode.padStart(4, '0'))
-    if (tariffRate !== undefined) {
-      const partnerCoords = await getCountryCoords(row.PartnerISO3)
-      if (partnerCoords) {
-        // Line from USA to partner country
-        const coordinates: [[number, number], [number, number]] = [
-          USA_COORDS,
-          partnerCoords,
-        ]
-
-        lineFeatures.push({
-          type: 'Feature',
-          properties: {
-            tariffRate: tariffRate,
-            tradeValue: parseFloat(row['TradeValue in 1000 USD']) * 1000,
-            partner: row.PartnerName,
-          },
-          geometry: {
-            type: 'LineString',
-            coordinates,
-          },
-        })
-
-        // Arrowhead at the destination (partner country)
-        arrowFeatures.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: partnerCoords,
-          },
-          properties: {
-            bearing: calculateBearing(USA_COORDS, partnerCoords),
-          },
-        })
-      }
+  for (const [iso, data] of sortedCountries) {
+    const partnerCoords = await getCountryCoords(iso)
+    if (partnerCoords) {
+      const coordinates: [[number, number], [number, number]] = [
+        USA_COORDS,
+        partnerCoords,
+      ]
+      lineFeatures.push({
+        type: 'Feature',
+        properties: {
+          tariffRate: data.avgTariff,
+          tradeValue: data.totalTradeValue,
+          partner: data.partnerName,
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates,
+        },
+      })
+      arrowFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: partnerCoords,
+        },
+        properties: {
+          bearing: calculateBearing(USA_COORDS, partnerCoords),
+        },
+      })
     }
   }
 
