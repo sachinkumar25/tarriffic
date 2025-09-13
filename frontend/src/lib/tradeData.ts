@@ -106,10 +106,9 @@ export const generateTariffGeoJSON = async () => {
     value.avgTariff = sum / value.tariffs.length
   })
 
-  // Get top 25 countries by trade value
+  // Get all countries sorted by trade value (all 212 countries)
   const sortedCountries = Array.from(tradeByCountry.entries())
     .sort(([, a], [, b]) => b.totalTradeValue - a.totalTradeValue)
-    .slice(0, 25)
 
   const lineFeatures = []
   const arrowFeatures = []
