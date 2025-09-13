@@ -77,7 +77,12 @@ export const generateTariffGeoJSON = async () => {
   >()
 
   for (const row of allRows) {
-    if (row.partner_iso && row.partner_iso.toLowerCase() !== 'wld') {
+    if (
+      row.partner_iso &&
+      row.partner_iso.toLowerCase() !== 'wld' &&
+      row.partner_iso !== 'CAN' &&
+      row.partner_iso !== 'MEX'
+    ) {
       const tradeValue = parseFloat(row.trade_value_total)
       const tariffRate = parseFloat(row.simple_average)
       if (!isNaN(tradeValue) && !isNaN(tariffRate)) {
