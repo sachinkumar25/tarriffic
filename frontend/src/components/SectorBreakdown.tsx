@@ -98,7 +98,7 @@ const SectorBreakdown = () => {
 
   return (
     <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow-md">
-      <Tabs value={view} onValueChange={(value) => setView(value as any)} className="w-full">
+      <Tabs value={view} onValueChange={(value) => setView(value as "sankey" | "treemap" | "sunburst")} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="sankey">Flow</TabsTrigger>
           <TabsTrigger value="treemap">Composition</TabsTrigger>

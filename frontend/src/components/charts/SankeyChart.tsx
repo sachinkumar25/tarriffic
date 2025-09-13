@@ -3,6 +3,7 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 import { scaleLinear } from 'd3-scale';
 import { rgb } from 'd3-color';
+import { getHSDescription } from '@/lib/hsDictionary';
 
 const SankeyChart = ({ data }: { data: any }) => {
   if (!data || !data.children) {
@@ -42,10 +43,11 @@ const SankeyChart = ({ data }: { data: any }) => {
     linkCustomData.push({ tariff: hs2.tariff });
 
     hs2.children.forEach((hs4: any) => {
-      const hs4Name = `${hs4.name} (${hs2.name})`;
+      const hs4Description = getHSDescription(hs4.hs4, hs4.name);
+      const hs4Name = `${hs4Description} (${hs2.name})`;
       if (!nodeMap.hasOwnProperty(hs4Name)) {
         nodeMap[hs4Name] = nodeIndex++;
-        labels.push(hs4.name); 
+        labels.push(hs4Description); 
         nodeColors.push('#D3D3D3');
       }
       const hs4Index = nodeMap[hs4Name];

@@ -7,7 +7,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge'; // Assuming you have a badge component
+import { Badge } from '@/components/ui/badge';
+import { getHSDescription } from '@/lib/hsDictionary';
 
 interface ProductData {
   hs4: string;
@@ -53,7 +54,7 @@ const AnalysisSheet: React.FC<AnalysisSheetProps> = ({
         {productData && (
           <SheetHeader>
             <SheetTitle className="text-lg font-bold">
-              {productData.name} (HS {productData.hs4})
+              {getHSDescription(productData.hs4, productData.name)} (HS {productData.hs4})
             </SheetTitle>
             <SheetDescription className="flex items-center space-x-2 pt-2">
               <Badge variant="secondary">Tariff: {productData.tariff.toFixed(2)}%</Badge>

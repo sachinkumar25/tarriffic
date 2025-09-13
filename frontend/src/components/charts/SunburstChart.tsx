@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import Plot from 'react-plotly.js';
+import { getHSDescription } from '@/lib/hsDictionary';
 
 interface ProductData {
   hs4: string;
@@ -59,8 +60,9 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
 
     hs2.children.forEach((hs4: any) => {
       const hs4_id = hs4.hs4.toString();
+      const hs4Description = getHSDescription(hs4.hs4, hs4.name);
       ids.push(hs4_id);
-      labels.push(wrapText(hs4.name));
+      labels.push(wrapText(hs4Description));
       parents.push(hs2_id);
       values.push(hs4.value);
       customdata.push({
