@@ -63,56 +63,53 @@ export default function MapboxGlobe({
         .then(data => {
           if (!mapRef.current) return
 
-          if (!map.getSource('tariffs')) {
-            map.addSource('tariffs', { type: 'geojson', data: data as any })
+          if (!map.getSource('tariffs-lines')) {
+            map.addSource('tariffs-lines', {
+              type: 'geojson',
+              data: data.lines as any,
+            })
           }
+          if (!map.getSource('tariffs-arrows')) {
+            map.addSource('tariffs-arrows', {
+              type: 'geojson',
+              data: data.arrows as any,
+            })
+          }
+
           if (!map.getLayer('tariff-lines')) {
             map.addLayer({
               id: 'tariff-lines',
               type: 'line',
-              source: 'tariffs',
+              source: 'tariffs-lines',
               layout: { 'line-cap': 'round', 'line-join': 'round' },
               paint: {
-                'line-width': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tradeValue'], 0],
-                  0, 0.5,
-                  1e10, 5,
-                ],
-                'line-color': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
-                  0, 'blue',
-                  10, 'purple',
-                  20, 'red',
-                ],
-                'line-opacity': 0.7,
+                'line-width': 2,
+                'line-color': 'black',
+                'line-opacity': 1,
               },
             })
           }
-          if (!map.getLayer('tariff-arrows')) {
-            map.addLayer({
-              id: 'tariff-arrows',
-              type: 'symbol',
-              source: 'tariffs',
-              layout: {
-                'symbol-placement': 'line',
-                'symbol-spacing': 100,
-                'text-field': '▶',
-                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-                'text-size': 12,
-                'text-rotate': 90,
-                'text-allow-overlap': true,
-                'text-ignore-placement': true,
-                'text-keep-upright': false,
-              },
-              paint: {
-                'text-color': [
-                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
-                  0, 'blue',
-                  20, 'red',
-                ],
-              },
-            })
+          if (map.getLayer('tariff-arrows')) {
+            map.removeLayer('tariff-arrows')
           }
+          map.addLayer({
+            id: 'tariff-arrows',
+            type: 'symbol',
+            source: 'tariffs-arrows',
+            layout: {
+              'text-field': '▲',
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+              'text-size': 24,
+              'text-rotate': ['get', 'bearing'],
+              'text-rotation-alignment': 'map',
+              'text-pitch-alignment': 'map',
+              'text-allow-overlap': true,
+              'text-ignore-placement': true,
+            },
+            paint: {
+              'text-color': 'black',
+            },
+          })
         })
         .catch(err => {
           console.error('tariff data error:', err)
