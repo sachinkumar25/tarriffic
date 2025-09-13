@@ -6,17 +6,16 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { generateTariffGeoJSON } from '@/lib/tradeData'
 
 const INITIAL_CENTER: [number, number] = [0, 15]
-// Slightly conservative so the full sphere fits within a square mask.
 const INITIAL_ZOOM = 1.25
 
 export default function MapboxGlobe({
-  transparentBackground = false,
+  transparentBackground = true,
 }: {
   transparentBackground?: boolean
 }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // only for data, not a full-screen overlay
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -24,7 +23,7 @@ export default function MapboxGlobe({
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/outdoors-v12', // globe-friendly style
+      style: 'mapbox://styles/mapbox/outdoors-v12',
       projection: 'globe',
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
@@ -33,55 +32,58 @@ export default function MapboxGlobe({
       antialias: true,
       pitchWithRotate: false,
     })
-
     mapRef.current = map
+
+    // Ensure a first render even if the container finished sizing just after init
+    requestAnimationFrame(() => {
+      map.resize()
+      map.triggerRepaint()
+    })
+
+    map.once('load', () => {
+      // One more resize after tiles/style are ready
+      map.resize()
+      map.triggerRepaint()
+    })
 
     map.on('style.load', () => {
       if (transparentBackground) {
         map.setFog({
           color: 'rgba(0,0,0,0)',
           'high-color': 'rgba(0,0,0,0)',
-          'horizon-blend': 0.0,
+          'horizon-blend': 0,
           'space-color': 'rgba(0,0,0,0)',
-          'star-intensity': 0.0,
+          'star-intensity': 0,
         })
         const bg = map.getStyle().layers?.find(l => l.type === 'background')?.id
         if (bg) map.setPaintProperty(bg, 'background-color', 'rgba(0,0,0,0)')
+        // and make the canvas itself transparent just in case
+        map.getCanvas().style.background = 'transparent'
       }
 
+      // OPTIONAL: load your trade data without blocking the render
+      setLoading(true)
       generateTariffGeoJSON()
-        .then(tariffData => {
-          setLoading(false)
+        .then(data => {
           if (!mapRef.current) return
 
           if (!map.getSource('tariffs')) {
-            map.addSource('tariffs', {
-              type: 'geojson',
-              data: tariffData as any,
-            })
+            map.addSource('tariffs', { type: 'geojson', data: data as any })
           }
-
           if (!map.getLayer('tariff-lines')) {
             map.addLayer({
               id: 'tariff-lines',
               type: 'line',
               source: 'tariffs',
-              layout: {
-                'line-cap': 'round',
-                'line-join': 'round',
-              },
+              layout: { 'line-cap': 'round', 'line-join': 'round' },
               paint: {
                 'line-width': [
-                  'interpolate',
-                  ['linear'],
-                  ['coalesce', ['get', 'tradeValue'], 0], // safe
+                  'interpolate', ['linear'], ['coalesce', ['get', 'tradeValue'], 0],
                   0, 0.5,
                   1e10, 5,
                 ],
                 'line-color': [
-                  'interpolate',
-                  ['linear'],
-                  ['coalesce', ['get', 'tariffRate'], 0], // safe
+                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
                   0, 'blue',
                   10, 'purple',
                   20, 'red',
@@ -90,7 +92,6 @@ export default function MapboxGlobe({
               },
             })
           }
-
           if (!map.getLayer('tariff-arrows')) {
             map.addLayer({
               id: 'tariff-arrows',
@@ -109,9 +110,7 @@ export default function MapboxGlobe({
               },
               paint: {
                 'text-color': [
-                  'interpolate',
-                  ['linear'],
-                  ['coalesce', ['get', 'tariffRate'], 0], // safe
+                  'interpolate', ['linear'], ['coalesce', ['get', 'tariffRate'], 0],
                   0, 'blue',
                   20, 'red',
                 ],
@@ -119,14 +118,18 @@ export default function MapboxGlobe({
             })
           }
         })
-        .catch(error => {
-          console.error('Failed to generate or load tariff data:', error)
+        .catch(err => {
+          console.error('tariff data error:', err)
+        })
+        .finally(() => {
           setLoading(false)
+          map.triggerRepaint()
         })
     })
 
     const ro = new ResizeObserver(() => {
       map.resize()
+      map.triggerRepaint()
     })
     ro.observe(mapContainer.current)
 
@@ -139,9 +142,10 @@ export default function MapboxGlobe({
 
   return (
     <div className="w-full h-full relative">
+      {/* small, non-blocking loader in the corner */}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-          <div className="text-white">Loading trade data...</div>
+        <div className="absolute right-2 bottom-2 text-xs text-white/70 pointer-events-none">
+          loading data…
         </div>
       )}
       <div ref={mapContainer} className="w-full h-full" />

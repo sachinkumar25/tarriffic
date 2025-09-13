@@ -12,16 +12,6 @@ export default function Home() {
       {/* animated background */}
       <SupplyChainBackdrop />
 
-      {/* connectors (behind nodes, above backdrop) */}
-      <ArcConnectors
-        pairs={[
-          { from: "usDockRight",          to: "globeDockLeftTop" },
-          { from: "worldDockRight",       to: "globeDockLeftBottom", dashed: true },
-          { from: "globeDockRightTop",    to: "lineDockLeft" },
-          { from: "globeDockRightBottom", to: "pieDockLeft", dashed: true },
-        ]}
-      />
-
       {/* header */}
       <div className="relative z-10 px-4 pt-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight
@@ -51,15 +41,28 @@ export default function Home() {
       {/* node layer */}
       <div className="relative z-10 max-w-7xl mx-auto px-4">
         {/* Globe — hard circular mask, centered */}
-        <Link href="/globe" className="relative block mx-auto mt-8 w-[520px] md:w-[560px] aspect-square group">
-          <div className="absolute inset-0 rounded-full overflow-hidden">
-            <MapboxGlobe />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
+        <Link
+          href="/globe"
+          className="relative block mx-auto mt-8 w-[520px] md:w-[560px] aspect-square group"
+        >
+          {/* use a true mask so nothing bleeds past the circle */}
+          <div
+            className="absolute inset-0"
+            style={{
+              WebkitMaskImage:
+                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
+              maskImage:
+                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
+            }}
+          >
+            <MapboxGlobe transparentBackground />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors grid place-items-center">
               <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                 Click to explore
               </span>
             </div>
           </div>
+
           {/* docks around the globe */}
           <Dock id="globeDockLeftTop"     side="left"  offset="38%" />
           <Dock id="globeDockLeftBottom"  side="left"  offset="66%" />
@@ -68,39 +71,49 @@ export default function Home() {
         </Link>
 
         {/* Absolute nodes placed at arc endpoints */}
-        {/* US heatmap – top-left */}
+        {/* US heatmap – top-left (smaller) */}
         <section className="absolute left-[min(3.5vw,40px)] top-[220px]">
-          <div className="w-[180px] aspect-square">
+          <div className="w-[150px] aspect-square">
             <HeatmapThumb variant="us" className="h-full w-full rounded-2xl" />
           </div>
           <Dock id="usDockRight" side="right" offset="50%" />
         </section>
 
-        {/* World heatmap – bottom-left */}
-        <section className="absolute left-[min(3.5vw,40px)] top-[440px]">
-          <div className="w-[180px] aspect-square">
+        {/* World heatmap – bottom-left (smaller) */}
+        <section className="absolute left-[min(3.5vw,40px)] top-[430px]">
+          <div className="w-[150px] aspect-square">
             <HeatmapThumb variant="world" className="h-full w-full rounded-2xl" />
           </div>
           <Dock id="worldDockRight" side="right" offset="50%" />
         </section>
 
-        {/* Line chart – top-right */}
+        {/* Line chart – top-right (smaller) */}
         <section className="absolute right-[min(3.5vw,40px)] top-[210px]">
-          <div className="w-[340px] h-[180px] rounded-2xl overflow-hidden">
+          <div className="w-[300px] h-[160px] rounded-2xl overflow-hidden">
             <ChartThumb variant="line" className="h-full w-full" />
           </div>
           <Dock id="lineDockLeft" side="left" offset="46%" />
         </section>
 
-        {/* Pie chart – bottom-right, forced perfect circle */}
+        {/* Pie chart – bottom-right, perfect circle */}
         <section className="absolute right-[min(3.5vw,40px)] top-[450px]">
-          <div className="w-[170px] aspect-square rounded-full overflow-hidden grid place-items-center">
+          <div className="w-[150px] aspect-square rounded-full overflow-hidden grid place-items-center">
             <div className="w-[82%] aspect-square rounded-full overflow-hidden">
               <ChartThumb variant="pie" />
             </div>
           </div>
           <Dock id="pieDockLeft" side="left" offset="50%" />
         </section>
+
+        {/* CONNECTORS — mount AFTER all nodes so endpoints always resolve */}
+        <ArcConnectors
+          pairs={[
+            { from: "usDockRight",          to: "globeDockLeftTop" },
+            { from: "worldDockRight",       to: "globeDockLeftBottom", dashed: true },
+            { from: "globeDockRightTop",    to: "lineDockLeft" },
+            { from: "globeDockRightBottom", to: "pieDockLeft", dashed: true },
+          ]}
+        />
       </div>
     </div>
   )
