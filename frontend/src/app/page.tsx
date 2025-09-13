@@ -51,24 +51,21 @@ export default function Home() {
       {/* node layer */}
       <div className="relative z-10 max-w-7xl mx-auto px-4">
         {/* Globe — hard circular mask, centered */}
-        <section className="relative mx-auto mt-8 w-[520px] md:w-[560px] aspect-square">
-          <div
-            className="absolute inset-0"
-            style={{
-              WebkitMaskImage:
-                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
-              maskImage:
-                "radial-gradient(closest-side, #000 99.6%, transparent 100%)",
-            }}
-          >
+        <Link href="/globe" className="relative block mx-auto mt-8 w-[520px] md:w-[560px] aspect-square group">
+          <div className="absolute inset-0 rounded-full overflow-hidden">
             <MapboxGlobe />
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
+              <span className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                Click to explore
+              </span>
+            </div>
           </div>
           {/* docks around the globe */}
           <Dock id="globeDockLeftTop"     side="left"  offset="38%" />
           <Dock id="globeDockLeftBottom"  side="left"  offset="66%" />
           <Dock id="globeDockRightTop"    side="right" offset="38%" />
           <Dock id="globeDockRightBottom" side="right" offset="66%" />
-        </section>
+        </Link>
 
         {/* Absolute nodes placed at arc endpoints */}
         {/* US heatmap – top-left */}
