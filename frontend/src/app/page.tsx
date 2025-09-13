@@ -97,12 +97,20 @@ export default function Home() {
             An Interactive Guide to U.S. Tariffs
           </p>
         </div>
-        <Link
-          href="/tariff-info"
-          className="absolute top-8 right-8 text-lg font-semibold text-gray-300 hover:text-white transition-colors"
-        >
-          Tariff Info
-        </Link>
+        <div className="absolute top-8 right-8 flex gap-4">
+          <Link
+            href="/basket"
+            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+          >
+            Consumer Impact
+          </Link>
+          <Link
+            href="/tariff-info"
+            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+          >
+            Tariff Info
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">

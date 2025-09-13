@@ -7,6 +7,7 @@ const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/heatmap', label: 'Global Heatmap' },
     { href: '/sectors', label: 'Sector Breakdown' },
+    { href: '/basket', label: 'Consumer Basket' },
 ];
 
 export default function Dock() {
