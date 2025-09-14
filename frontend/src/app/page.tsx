@@ -115,8 +115,8 @@ export default function Home() {
         })
       },
       {
-        rootMargin: "-30% 0px -30% 0px",
-        threshold: 0.8,
+        rootMargin: "-20% 0px -20% 0px",
+        threshold: 0.5,
       }
     )
 
@@ -143,7 +143,7 @@ export default function Home() {
             Tributum
           </h1>
           <p className="mt-2 text-sm text-sky-200/70 tracking-widest">
-            (tri-bu-tum) <span className="italic">noun</span> | Latin: tax, tribute
+            (tree-BYOO-toom) <span className="italic">noun</span> | Latin: tax, tribute
           </p>
           <p className="mt-4 text-xl md:text-2xl text-sky-200/90 font-medium tracking-wide">
             An Interactive Guide to U.S. Tariffs
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="absolute top-8 left-8 flex gap-4">
           <Link
             href="/tariff-info"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+            className="text-3xl font-semibold text-gray-300 hover:text-white transition-colors"
           >
             Tariff Info
           </Link>
@@ -199,7 +199,7 @@ export default function Home() {
             {/* Intro Visual Placeholder */}
             <div
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ease-in-out",
                 activeSection === 0
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
@@ -217,7 +217,7 @@ export default function Home() {
             <Link
               href="/globe"
               className={cn(
-                "absolute inset-0 transition-opacity duration-300 w-[560px] h-[560px]",
+                "absolute inset-0 transition-opacity duration-1000 ease-in-out w-[560px] h-[560px]",
                 activeSection === 1
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
@@ -229,7 +229,7 @@ export default function Home() {
             {/* Heatmaps */}
             <div
               className={cn(
-                "absolute inset-0 flex items-center justify-center gap-12 transition-opacity duration-300",
+                "absolute inset-0 flex items-center justify-center gap-12 transition-opacity duration-1000 ease-in-out",
                 activeSection === 2
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
@@ -240,34 +240,29 @@ export default function Home() {
                 href="/tariff-trends"
                 className="flex flex-col items-center gap-2"
               >
-                <div className="w-[240px] aspect-square">
-                  <ChartThumb
-                    variant="line"
-                    className="h-full w-full rounded-2xl"
+                <div className="w-[480px] aspect-square">
+                  <img 
+                    src="https://static.vecteezy.com/system/resources/thumbnails/018/922/755/small_2x/infographic-color-symbol-png.png" 
+                    alt="Bar Chart of Tariff Rates" 
+                    className="h-full w-full rounded-2xl object-cover"
                   />
                 </div>
-                <p className="text-lg font-semibold text-gray-200">
-                  Explore U.S. Tariff Rates
-                </p>
               </Link>
             </div>
             
             <Link
               href="/heatmap"
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ease-in-out",
                 activeSection === 3
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               )}
             >
               <div className="flex flex-col items-center gap-2">
-                <div className="w-[240px] aspect-square">
+                <div className="w-[480px] aspect-square">
                   <GlobeThumb className="h-full w-full rounded-2xl" />
                 </div>
-                <p className="text-lg font-semibold text-gray-200">
-                  Explore Global Trade Flows
-                </p>
               </div>
             </Link>
 
@@ -275,14 +270,18 @@ export default function Home() {
             <Link
               href="/sectors"
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ease-in-out",
                 activeSection === 4
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               )}
             >
-              <div className="w-[240px] aspect-square">
-                <ChartThumb variant="treemap" />
+              <div className="w-[480px] aspect-square">
+                <img 
+                  src="https://images.vexels.com/media/users/3/129856/isolated/preview/83b8b3382c3f8f1ac4a8b16c5388360f-colorful-four-parts-pie-chart.png" 
+                  alt="Sankey Chart Thumbnail" 
+                  className="h-full w-full rounded-2xl object-cover"
+                />
               </div>
             </Link>
 
@@ -290,13 +289,13 @@ export default function Home() {
             <Link
               href="/basket"
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ease-in-out",
                 activeSection === 5
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               )}
             >
-              <div className="w-[300px] h-[300px]">
+              <div className="w-[480px] h-[480px]">
                 <BasketThumb className="h-full w-full" />
               </div>
             </Link>

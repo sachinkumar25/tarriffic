@@ -8,6 +8,7 @@ import { LayoutGrid, X } from 'lucide-react';
 const navLinks = [
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/globe', label: 'Interactive World Map', icon: '🌍' },
+    { href: '/tariff-trends', label: 'U.S. Tariff Rates', icon: '📈' },
     { href: '/heatmap', label: 'Global Heatmap', icon: '🗺️' },
     { href: '/sectors', label: 'Sector Breakdown', icon: '📊' },
     { href: '/basket', label: 'Consumer Basket', icon: '🛒' },
