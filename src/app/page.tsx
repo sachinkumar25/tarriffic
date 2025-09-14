@@ -28,7 +28,7 @@ const sections = [
     id: "us-rates",
     title: "U.S. Tariff Rates",
     description:
-      "Tariffs are not applied uniformly; they are a strategic tool. This chart shows which product categories face the highest taxes, giving a direct look at the industries the U.S. government aims to protect most. High tariffs on certain goods can shield domestic industries from foreign competition but may also lead to higher prices for consumers. Click to explore these economic strategies in detail.",
+      "This chart traces the evolution of U.S. tariff rates from 1821 to the present, offering a window into the nation’s shifting trade policies. Each point represents the average tariff rate at a given time, reflecting moments of protectionism, economic transformation, and global integration. From the high tariffs of the 19th century to the lower rates of recent decades, these trends highlight how tariffs have influenced American trade, industry, and economic growth. Use this visualization to explore how policy decisions have shaped the balance between protecting domestic industries and promoting international trade.",
   },
   {
     id: "global-flows",
