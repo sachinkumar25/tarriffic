@@ -161,11 +161,11 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
         {/* Left side: Scrolling Text Content */}
-        <div className="py-24 space-y-4">
+        <div className="py-24 space-y-16">
           {sections.map((section, index) => (
             <section
               key={section.id}
-              className="min-h-screen flex flex-col justify-center"
+              className="min-h-[70vh] flex flex-col justify-center"
             >
               <div
                 ref={(el) => {
@@ -194,7 +194,7 @@ export default function Home() {
         </div>
 
         {/* Right side: Sticky Visuals */}
-        <div className="sticky top-0 h-screen flex items-center justify-start">
+        <div className="sticky top-0 h-screen flex items-center justify-start pl-12">
           <div className="relative w-full h-full max-w-xl max-h-xl flex items-center justify-center">
             {/* Intro Visual Placeholder */}
             <div
@@ -282,7 +282,7 @@ export default function Home() {
               )}
             >
               <div className="w-[240px] aspect-square">
-                <ChartThumb variant="pie" />
+                <ChartThumb variant="treemap" />
               </div>
             </Link>
 

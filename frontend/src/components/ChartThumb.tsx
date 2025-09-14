@@ -2,7 +2,7 @@
 import React from "react";
 
 type Props = {
-  variant: "line" | "pie";
+  variant: "line" | "pie" | "treemap";
   className?: string; // use this to control the node size from the parent
 };
 
@@ -143,41 +143,58 @@ export default function ChartThumb({ variant, className = "" }: Props) {
             <path d="M100 225 C 240 225, 240 135, 380 135" strokeWidth="10" />
           </g>
         </svg>
-      ) : (
-        // ---------------- PIE ----------------
+      ) : variant === "pie" || variant === "treemap" ? (
+        // ---------------- PIE (now Treemap) ----------------
         <svg
           viewBox="0 0 200 200"
           className="absolute inset-0 h-full w-full"
           preserveAspectRatio="xMidYMid meet"
         >
           <defs>
-            <radialGradient id="pie-grad-1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#38bdf8" />
-              <stop offset="100%" stopColor="#0ea5e9" />
-            </radialGradient>
-            <radialGradient id="pie-grad-2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#4ade80" />
-              <stop offset="100%" stopColor="#22c55e" />
-            </radialGradient>
-            <radialGradient id="pie-grad-3" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#facc15" />
-              <stop offset="100%" stopColor="#eab308" />
-            </radialGradient>
-            <radialGradient id="pie-grad-4" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#f87171" />
-              <stop offset="100%" stopColor="#ef4444" />
-            </radialGradient>
+            <linearGradient id="treemap-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#818cf8" />
+              <stop offset="100%" stopColor="#4f46e5" />
+            </linearGradient>
+            <linearGradient id="treemap-grad-2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#d97706" />
+            </linearGradient>
+            <linearGradient id="treemap-grad-3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#60a5fa" />
+              <stop offset="100%" stopColor="#2563eb" />
+            </linearGradient>
+            <linearGradient id="treemap-grad-4" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#34d399" />
+              <stop offset="100%" stopColor="#059669" />
+            </linearGradient>
+             <linearGradient id="treemap-grad-5" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#a78bfa" />
+              <stop offset="100%" stopColor="#7c3aed" />
+            </linearGradient>
           </defs>
 
-          {/* Segments */}
-          <g transform="rotate(-90 100 100)">
-            <circle cx="100" cy="100" r="100" fill="url(#pie-grad-1)" />
-            <path d="M100,100 L100,0 A100,100 0 0,1 200,100 z" fill="url(#pie-grad-2)" />
-            <path d="M100,100 L200,100 A100,100 0 0,1 100,200 z" fill="url(#pie-grad-3)" />
-            <path d="M100,100 L100,200 A100,100 0 0,1 0,100 z" fill="url(#pie-grad-4)" />
+          {/* Treemap Rectangles */}
+          <g>
+            {/* Main block */}
+            <rect x="0" y="0" width="120" height="120" fill="url(#treemap-grad-1)" rx="4"/>
+            <text x="10" y="20" fill="white" fontSize="12" fontWeight="bold">Electronics</text>
+
+            {/* Top right blocks */}
+            <rect x="125" y="0" width="75" height="75" fill="url(#treemap-grad-2)" rx="4"/>
+             <text x="130" y="15" fill="white" fontSize="10">Automotive</text>
+
+            <rect x="125" y="80" width="75" height="40" fill="url(#treemap-grad-3)" rx="4"/>
+             <text x="130" y="95" fill="white" fontSize="10">Metals</text>
+
+            {/* Bottom blocks */}
+            <rect x="0" y="125" width="75" height="75" fill="url(#treemap-grad-4)" rx="4"/>
+             <text x="5" y="140" fill="white" fontSize="10">Agriculture</text>
+
+            <rect x="80" y="125" width="120" height="75" fill="url(#treemap-grad-5)" rx="4"/>
+             <text x="85" y="140" fill="white" fontSize="10">Textiles</text>
           </g>
         </svg>
-      )}
+      ) : null}
     </div>
   );
 }
