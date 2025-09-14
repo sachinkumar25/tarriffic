@@ -172,7 +172,7 @@ const SectorBreakdown = () => {
 
       {/* Chart container with proper bounds */}
       <div className="flex-1 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 shadow-2xl overflow-hidden">
-        <div className="w-full h-full p-6">
+        <div className="w-full h-full p-6 flex items-center justify-center">
           {renderContent()}
         </div>
       </div>

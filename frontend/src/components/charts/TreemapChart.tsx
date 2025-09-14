@@ -99,22 +99,33 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
     },
     marker: {
       colors: customdata.map(d => d.tariff),
-      colorscale: 'RdYlGn',
-      reversescale: true,
+      colorscale: [
+        [0, '#0ea5e9'], // Sky blue for low tariffs
+        [0.5, '#3b82f6'], // Blue for medium tariffs
+        [1, '#1e40af'] // Dark blue for high tariffs
+      ],
       showscale: true,
       colorbar: {
-        title: 'Tariff Burden (%)'
+        title: 'Tariff Burden (%)',
+        titlefont: { color: '#ffffff' },
+        tickfont: { color: '#ffffff' }
       }
     },
     hovertemplate: '<b>%{label}</b><br>Trade Value: %{value:$,.2s}<br>Tariff: %{customdata.tariff:.2f}%<br>Share of Total: %{customdata.share_of_total:.2f}%<extra></extra>',
   }];
 
   const layout = {
-    title: 'Trade Composition by Sector',
+    title: {
+      text: 'Trade Composition by Sector',
+      font: { color: '#ffffff', size: 16 }
+    },
     autosize: true,
     font: {
       family: 'Inter, sans-serif',
+      color: '#ffffff'
     },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)'
   };
 
   return (

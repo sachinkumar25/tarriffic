@@ -21,9 +21,9 @@ export default function HeatmapPage() {
   const [countryData, setCountryData] = useState<CountryData[]>([]);
 
   return (
-    <div className="w-full h-screen relative">
+    <div className="relative isolate w-screen h-screen">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-black/50 backdrop-blur-sm border-b border-white/20">
+      <div className="absolute top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-sm border-b border-white/20">
         <div className="p-4">
           <h1 className="text-2xl font-bold text-white mb-4">Global Tariff Heatmap</h1>
           
@@ -100,12 +100,13 @@ export default function HeatmapPage() {
       </div>
 
       {/* Heatmap Component */}
-      <div className="w-full h-full">
+      <div className="relative z-0 w-full h-full">
         <Heatmap 
             metric={metric} 
             projection={projection} 
             showHotspots={showHotspots}
             onDataLoaded={setCountryData}
+            transparentBackground
         />
       </div>
       {showHotspots && countryData.length > 0 && <HotspotList countryData={countryData} metric={metric} />}

@@ -5,6 +5,24 @@ import { scaleLinear } from 'd3-scale';
 import { rgb } from 'd3-color';
 import { getHSDescription } from '@/lib/hsDictionary';
 
+const wrapLabel = (text: string, maxLength: number = 15): string => {
+  if (text.length <= maxLength) return text;
+  const words = text.split(' ');
+  let result = '';
+  let currentLine = '';
+  
+  for (const word of words) {
+    if ((currentLine + word).length > maxLength && currentLine.length > 0) {
+      result += currentLine.trim() + '<br>';
+      currentLine = word + ' ';
+    } else {
+      currentLine += word + ' ';
+    }
+  }
+  result += currentLine.trim();
+  return result;
+};
+
 const SankeyChart = ({ data }: { data: any }) => {
   if (!data || !data.children) {
     return <div className="text-center p-8">No data available for Sankey chart.</div>;
@@ -16,23 +34,28 @@ const SankeyChart = ({ data }: { data: any }) => {
   const value: number[] = [];
   const linkColors: string[] = [];
   const linkCustomData: any[] = [];
-  const nodeColors: string[] = ['#888']; 
+  const nodeColors: string[] = ['#374151']; // Dark gray for USA node 
 
   const nodeMap: { [key: string]: number } = { [data.from]: 0 };
   let nodeIndex = 1;
 
-  const minTariff = Math.min(...data.children.flatMap((c: any) => [c.tariff, ...c.children.map((sc: any) => sc.tariff)]));
-  const maxTariff = Math.max(...data.children.flatMap((c: any) => [c.tariff, ...c.children.map((sc: any) => sc.tariff)]));
+  // Sort HS2 sectors by value and take top 4 to show only the most essential sectors
+  const topHS2Sectors = [...data.children]
+    .sort((a: any, b: any) => b.value - a.value)
+    .slice(0, 4);
+
+  const minTariff = Math.min(...topHS2Sectors.flatMap((c: any) => [c.tariff, ...c.children.map((sc: any) => sc.tariff)]));
+  const maxTariff = Math.max(...topHS2Sectors.flatMap((c: any) => [c.tariff, ...c.children.map((sc: any) => sc.tariff)]));
   
   const colorScale = scaleLinear<string>()
     .domain([minTariff, (minTariff + maxTariff) / 2, maxTariff])
-    .range(['green', 'yellow', 'red']);
+    .range(['#0ea5e9', '#3b82f6', '#1e40af']); // Sky blue to blue to dark blue
 
-  data.children.forEach((hs2: any) => {
+  topHS2Sectors.forEach((hs2: any) => {
     if (!nodeMap.hasOwnProperty(hs2.name)) {
       nodeMap[hs2.name] = nodeIndex++;
-      labels.push(hs2.name);
-      nodeColors.push('#A9A9A9');
+      labels.push(wrapLabel(hs2.name, 15));
+      nodeColors.push('#6b7280'); // Medium gray for HS2 nodes
     }
     const hs2Index = nodeMap[hs2.name];
 
@@ -42,13 +65,18 @@ const SankeyChart = ({ data }: { data: any }) => {
     linkColors.push(colorScale(hs2.tariff));
     linkCustomData.push({ tariff: hs2.tariff });
 
-    hs2.children.forEach((hs4: any) => {
+    // Sort HS4 sub-sectors by value and take top 1 per HS2 for maximum simplicity
+    const topHS4Sectors = [...hs2.children]
+      .sort((a: any, b: any) => b.value - a.value)
+      .slice(0, 1);
+
+    topHS4Sectors.forEach((hs4: any) => {
       const hs4Description = getHSDescription(hs4.hs4, hs4.name);
       const hs4Name = `${hs4Description} (${hs2.name})`;
       if (!nodeMap.hasOwnProperty(hs4Name)) {
         nodeMap[hs4Name] = nodeIndex++;
-        labels.push(hs4Description); 
-        nodeColors.push('#D3D3D3');
+        labels.push(wrapLabel(hs4Description, 12)); 
+        nodeColors.push('#9ca3af'); // Light gray for HS4 nodes
       }
       const hs4Index = nodeMap[hs4Name];
 
@@ -64,14 +92,16 @@ const SankeyChart = ({ data }: { data: any }) => {
     type: 'sankey',
     orientation: 'h',
     node: {
-      pad: 15,
-      thickness: 20,
+      pad: 60,
+      thickness: 35,
       line: {
         color: 'black',
         width: 0.5
       },
       label: labels,
-      color: nodeColors
+      color: nodeColors,
+      labelposition: 'right',
+      labelside: 'right'
     },
     link: {
       source: source,
@@ -86,34 +116,25 @@ const SankeyChart = ({ data }: { data: any }) => {
     }
   }];
 
-  // Get top 2 HS2 sectors for annotations
-  const topSectors = [...data.children].sort((a, b) => b.value - a.value).slice(0, 2);
-  const annotations: any[] = topSectors.map((sector, index) => {
-    const sectorIndex = nodeMap[sector.name];
-    return {
-      x: 0.5, 
-      y: sectorIndex / (labels.length - 1),
-      text: `<b>${sector.name}</b><br>$${(sector.value / 1000000000).toFixed(1)}B`,
-      showarrow: true,
-      arrowhead: 2,
-      ax: index % 2 === 0 ? -80 : 80,
-      ay: -40,
-      font: {
-        size: 12
-      }
-    };
-  });
+  // Remove annotations to clean up the chart
+  const annotations: any[] = [];
 
 
   const layout = {
-    title: 'US Trade Flows by Sector (Size = Trade Value, Color = Tariff Rate)',
-    font: {
-      size: 10
+    title: {
+      text: 'US Trade Flows by Sector (Size = Trade Value, Color = Tariff Rate)',
+      font: { color: '#ffffff', size: 14 }
     },
-    width: 1200,
-    height: 800,
-    margin: { l: 50, r: 50, b: 50, t: 50 },
-    annotations: annotations
+    font: {
+      size: 12,
+      color: '#ffffff'
+    },
+    autosize: true,
+    height: 600,
+    margin: { l: 120, r: 120, b: 50, t: 60 },
+    annotations: annotations,
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)'
   };
 
   return (

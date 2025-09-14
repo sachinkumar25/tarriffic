@@ -78,7 +78,7 @@ export default function TariffInfoPage() {
         {/* Footer */}
         <div className="mt-12 text-center text-sm">
           <Link href="/" className="text-sky-400 hover:underline">
-            Back to Globe
+            Back to Home
           </Link>
         </div>
       </div>

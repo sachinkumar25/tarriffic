@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
 import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
@@ -12,7 +12,7 @@ const sections = [
     id: "intro",
     title: "Tariffs: The Price of Protection",
     description:
-      "A tariff is a tax on foreign goods entering the country. When a car from Germany or electronics from China arrive at a U.S. port, the government collects this tax. It's often said that other countries pay for tariffs, but in reality, the cost is typically passed down to American businesses and consumers through higher prices. We'll explore how the U.S. uses tariffs to protect its industries and the impact on the American economy.",
+      "A tariff is a tax on foreign goods entering the country. When a car from Germany or electronics from China arrive at a U.S. port, the government collects this tax. It's often said that other countries pay for tariffs, but in reality, the cost is typically passed down to businesses and consumers through higher prices. We'll explore how the U.S. uses tariffs to protect its industries and the impact on the American economy.",
   },
   {
     id: "globe",
@@ -24,7 +24,7 @@ const sections = [
     id: "heatmaps",
     title: "Tariff Strategy at a Glance",
     description:
-      "Tariffs are not applied uniformly; they are a strategic tool. The heatmap on the left shows which product categories face the highest taxes, a direct look at the industries the U.S. government protects most. On the right, a global view illustrates all countries and their trade flows in context. Click the world heatmap to explore these economic strategies in detail.",
+      "Tariffs are not applied uniformly; they are a strategic tool. The global heatmap shows all countries and their trade flows in context. Click the heatmap to explore these economic strategies in detail.",
   },
   {
     id: "sectors",
@@ -33,59 +33,77 @@ const sections = [
       "From steel and automobiles to agriculture, governments use tariffs to shield key industries from foreign competition. This chart breaks down which sectors receive the most protection. While these policies can support domestic jobs, they often result in higher prices and fewer choices for consumers. Click the chart for a detailed breakdown.",
   },
   {
-    id: "trends",
-    title: "How Trade Policies the Economy",
+    id: "consumer",
+    title: "Consumer Impact",
     description:
-      "A change in a trade policy can create ripples across the globe. This chart shows how trade volumes respond to new tariffs. A sudden hike can trigger retaliation from other nations, disrupting supply chains for businesses and affecting the global economy. Click the chart to interact with the data and see how these critical economic trends unfold.",
+      "Tariffs don't just affect businesses—they directly impact your wallet. Every tariff increase raises the cost of imported goods, from electronics and clothing to food and fuel. This interactive tool shows how tariffs affect a typical household's monthly spending. See how your shopping basket fills up with higher prices as tariffs increase.",
   },
 ]
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState(0)
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const rafRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = sectionRefs.current.indexOf(
-              entry.target as HTMLDivElement
-            )
+  // Memoize the intersection callback to prevent unnecessary re-renders
+  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+    // Cancel any pending RAF to prevent multiple updates
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+    }
+
+    rafRef.current = requestAnimationFrame(() => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = sectionRefs.current.indexOf(
+            entry.target as HTMLDivElement
+          )
+          if (index !== -1 && index !== activeSection) {
             setActiveSection(index)
-          } else {
-            const index = sectionRefs.current.indexOf(
-              entry.target as HTMLDivElement
-            )
-            if (activeSection === index) {
-              setActiveSection(-1)
-            }
           }
-        })
-      },
-      {
-        rootMargin: "-30% 0px -30% 0px",
-        threshold: 0.8,
-      }
-    )
+        }
+      })
+    })
+  }, [activeSection])
 
-    sectionRefs.current.forEach((ref) => {
-      if (ref) {
-        observer.observe(ref)
+  // Optimized intersection observer setup
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      rootMargin: "-30% 0px -30% 0px",
+      threshold: 0.8,
+    })
+
+    const refs = sectionRefs.current
+    refs.forEach((ref) => {
+      if (ref && observerRef.current) {
+        observerRef.current.observe(ref)
       }
     })
 
     return () => {
-      const currentRefs = sectionRefs.current;
-      currentRefs.forEach((ref) => {
-        if (ref) {
-          observer.unobserve(ref)
-        }
-      })
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+      if (observerRef.current) {
+        refs.forEach((ref) => {
+          if (ref) {
+            observerRef.current?.unobserve(ref)
+          }
+        })
+        observerRef.current.disconnect()
+      }
     }
-  }, [activeSection])
+  }, [handleIntersection])
+
+  // Memoize sections to prevent unnecessary re-renders
+  const memoizedSections = useMemo(() => sections, [])
   return (
-    <div className="relative isolate min-h-screen bg-black text-white">
+    <div className="relative isolate min-h-screen bg-black text-white scroll-container" style={{
+      scrollBehavior: 'smooth',
+      willChange: 'scroll-position',
+      transform: 'translateZ(0)', // Force hardware acceleration
+    }}>
       <div className="relative z-10 px-4 pt-6">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-sky-200 via-cyan-200 to-white drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
@@ -95,15 +113,27 @@ export default function Home() {
             An Interactive Guide to U.S. Tariffs
           </p>
         </div>
+        <div className="absolute top-8 right-8 flex gap-4">
+          <Link
+            href="/tariff-info"
+            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+          >
+            Tariff Info
+          </Link>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
-        {/* Left side: Scrolling Text Content */}
-        <div className="py-24 space-y-4">
-          {sections.map((section, index) => (
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Zigzag Layout */}
+        <div className="space-y-0">
+          {memoizedSections.map((section, index) => (
             <section
               key={section.id}
-              className="min-h-screen flex flex-col justify-center"
+              className="min-h-screen flex items-center"
+              style={{
+                willChange: 'transform',
+                transform: 'translateZ(0)', // Force hardware acceleration
+              }}
             >
               <div
                 ref={(el) => {
@@ -111,123 +141,112 @@ export default function Home() {
                     sectionRefs.current[index] = el
                   }
                 }}
-                className="bg-black/50 backdrop-blur-sm p-8 rounded-2xl"
+                className={cn(
+                  "w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center",
+                  index % 2 === 0 ? "md:grid-flow-col" : "md:grid-flow-col-dense"
+                )}
               >
-                <h2 className="text-3xl font-bold mb-4 text-sky-200">
-                  {section.title}
-                </h2>
-                <p className="text-lg text-gray-300 leading-relaxed">
-                  {section.description}
-                </p>
+                {/* Text Content */}
+                <div className={cn(
+                  "order-1 md:order-1",
+                  index % 2 === 0 ? "md:order-1" : "md:order-2"
+                )}>
+                  <div className="bg-black/50 backdrop-blur-sm p-8 rounded-2xl">
+                    <h2 className="text-3xl font-bold mb-4 text-sky-200">
+                      {section.title}
+                    </h2>
+                    <p className="text-lg text-gray-300 leading-relaxed">
+                      {section.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Content */}
+                <div className={cn(
+                  "order-2 md:order-2 flex items-center justify-center",
+                  index % 2 === 0 ? "md:order-2" : "md:order-1"
+                )}>
+                  <div className="relative w-full h-[400px] max-w-xl flex items-center justify-center">
+                    {/* Section-specific visuals */}
+                    {index === 0 && (
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-gray-400">
+                          Scroll down to begin
+                        </p>
+                      </div>
+                    )}
+
+                    {index === 1 && (
+                      <Link href="/globe" className="w-full h-full">
+                        <MapboxGlobe transparentBackground showFilterButton={false} />
+                      </Link>
+                    )}
+
+                    {index === 2 && (
+                      <div className="flex items-center justify-center">
+                        {/* World Heatmap */}
+                        <Link
+                          href="/heatmap"
+                          className="flex flex-col items-center gap-2"
+                        >
+                          <div className="w-[300px] aspect-square">
+                            <HeatmapThumb
+                              variant="world"
+                              className="h-full w-full rounded-2xl"
+                            />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-200">
+                            Global Trade Flows
+                          </p>
+                        </Link>
+                      </div>
+                    )}
+
+                    {index === 3 && (
+                      <Link href="/sectors" className="w-full h-full flex items-center justify-center">
+                        <div className="w-[240px] aspect-square">
+                          <ChartThumb variant="pie" />
+                        </div>
+                      </Link>
+                    )}
+
+                    {index === 4 && (
+                      <Link href="/basket" className="w-full h-full flex items-center justify-center">
+                        {/* Shopping Basket Icon */}
+                        <div className="relative">
+                          <div className="w-40 h-40 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                            <svg 
+                              width="80" 
+                              height="80" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              className="text-white"
+                            >
+                              <path 
+                                d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z" 
+                                fill="currentColor"
+                              />
+                              <path 
+                                d="M9 8V17H11V8H9ZM13 8V17H15V8H13Z" 
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </div>
+                          {/* Price tags floating around */}
+                          <div className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-bounce">
+                            +5%
+                          </div>
+                          <div className="absolute -bottom-3 -left-3 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold animate-bounce" style={{animationDelay: '0.5s'}}>
+                            +12%
+                          </div>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
           ))}
-        </div>
-
-        {/* Right side: Sticky Visuals */}
-        <div className="sticky top-0 h-screen flex items-center justify-start">
-          <div className="relative w-full h-full max-w-xl max-h-xl flex items-center justify-center">
-            {/* Intro Visual Placeholder */}
-            <div
-              className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-                activeSection === 0
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
-              )}
-            >
-              <div className="text-center">
-                <p className="text-2xl font-bold text-gray-400">
-                  Scroll down to begin
-                </p>
-              </div>
-            </div>
-
-            {/* Interactive Globe */}
-            <Link
-              href="/globe"
-              className={cn(
-                "absolute inset-0 transition-opacity duration-300 w-[560px] h-[560px]",
-                activeSection === 1
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
-              )}
-            >
-              <MapboxGlobe transparentBackground />
-            </Link>
-
-            {/* Heatmaps */}
-            <div
-              className={cn(
-                "absolute inset-0 flex items-center justify-center gap-12 transition-opacity duration-300",
-                activeSection === 2
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
-              )}
-            >
-              {/* US Heatmap on the left */}
-              <Link
-                href="/tariff-trends"
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="w-[200px] aspect-square">
-                  <ChartThumb
-                    variant="line"
-                    className="h-full w-full rounded-2xl"
-                  />
-                </div>
-                <p className="text-lg font-semibold text-gray-200">
-                  U.S. Tariff Rates
-                </p>
-              </Link>
-
-              {/* World Heatmap on the right */}
-              <Link
-                href="/heatmap"
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="w-[200px] aspect-square">
-                  <HeatmapThumb
-                    variant="world"
-                    className="h-full w-full rounded-2xl"
-                  />
-                </div>
-                <p className="text-lg font-semibold text-gray-200">
-                  Global Trade Flows
-                </p>
-              </Link>
-            </div>
-
-            {/* Sector Breakdown */}
-            <Link
-              href="/sectors"
-              className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-                activeSection === 3
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
-              )}
-            >
-              <div className="w-[240px] aspect-square">
-                <ChartThumb variant="pie" />
-              </div>
-            </Link>
-
-            {/* Volume Trends */}
-            <Link
-              href="#"
-              className={cn(
-                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-                activeSection === 4
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none"
-              )}
-            >
-              <div className="w-[480px] h-[270px]">
-                <ChartThumb variant="line" className="h-full w-full" />
-              </div>
-            </Link>
-          </div>
         </div>
       </div>
     </div>

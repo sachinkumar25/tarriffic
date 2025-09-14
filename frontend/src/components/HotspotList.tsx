@@ -36,13 +36,13 @@ const HotspotList: React.FC<HotspotListProps> = ({ countryData, metric }) => {
     .slice(0, 5);
 
   return (
-    <div className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-md w-64 text-sm text-gray-800">
-      <h3 className="font-bold text-lg mb-2 capitalize">Top 5 {metric.replace(/_/g, ' ')}</h3>
+    <div className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black/80 backdrop-blur-sm p-4 rounded-lg shadow-md w-64 text-sm text-white border border-white/20 z-40">
+      <h3 className="font-bold text-lg mb-2 capitalize text-white">Top 5 {metric.replace(/_/g, ' ')}</h3>
       <ul>
         {topCountries.map((country) => (
-          <li key={country.iso_a3} className="flex justify-between items-center py-1 border-b border-gray-300/50">
-            <span className="font-semibold">{country.country}</span>
-            <span className="font-mono text-xs">{formatHotspotValue(country[metric], metric)}</span>
+          <li key={country.iso_a3} className="flex justify-between items-center py-1 border-b border-white/20">
+            <span className="font-semibold text-white">{country.country}</span>
+            <span className="font-mono text-xs text-white/80">{formatHotspotValue(country[metric], metric)}</span>
           </li>
         ))}
       </ul>
