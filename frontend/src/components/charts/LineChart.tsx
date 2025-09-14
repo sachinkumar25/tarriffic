@@ -122,12 +122,14 @@ const LineChart = () => {
   return (
     <div className="h-full w-full relative">
       <Plot
-        data={chartData}
-        layout={layout}
-        config={config}
-        style={{ width: '100%', height: '100%' }}
-        useResizeHandler
-        onClick={handlePointClick}
+        {...{
+          data: chartData,
+          layout: layout,
+          config: config,
+          style: { width: '100%', height: '100%' },
+          useResizeHandler: true,
+          onClick: handlePointClick,
+        } as any}
       />
       
       <HistoricalAnalysisSheet

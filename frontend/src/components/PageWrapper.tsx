@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname } from "next/navigation";
-import HomeButton from "@/components/HomeButton";
+// import HomeButton from "@/components/HomeButton";
+import BackButton from "./BackButton";
 import SupplyChainBackdrop from "@/components/SupplyChainBackdrop";
 
 export default function PageWrapper({
@@ -13,10 +14,10 @@ export default function PageWrapper({
   const isHomePage = pathname === '/';
 
   return (
-    <>
-      {!isHomePage && <HomeButton />}
-      {isHomePage ? <SupplyChainBackdrop /> : <SupplyChainBackdrop className="opacity-25" />}
-      {children}
-    </>
+    <div className="relative isolate flex h-screen w-full flex-col bg-gray-900 text-white">
+      <SupplyChainBackdrop className={isHomePage ? "" : "opacity-25"} />
+      {!isHomePage && <BackButton />}
+      <div className="flex-grow overflow-y-auto">{children}</div>
+    </div>
   );
 }

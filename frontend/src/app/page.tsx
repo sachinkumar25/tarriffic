@@ -8,6 +8,8 @@ import ChartThumb from "@/components/ChartThumb"
 import BasketThumb from "@/components/BasketThumb"
 import GlobeThumb from "@/components/GlobeThumb"
 import { cn } from "@/lib/utils"
+import { Volume2, Square } from 'lucide-react';
+
 
 const sections = [
   {
@@ -50,7 +52,48 @@ const sections = [
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState(0)
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    if (audio) {
+      const onEnded = () => {
+        setIsSpeaking(false);
+      };
+      audio.addEventListener('ended', onEnded);
+      return () => {
+        audio.removeEventListener('ended', onEnded);
+      };
+    }
+  }, [audio]);
+
+  async function playAI(text: string) {
+    if (isSpeaking && audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      setAudio(null);
+      setIsSpeaking(false);
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      const res = await fetch("/api/voice", {
+        method: "POST",
+        body: JSON.stringify({ text }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const newAudio = new Audio(url);
+      setAudio(newAudio);
+      newAudio.play();
+    } catch (error) {
+      console.error("Error playing AI voice:", error);
+      setIsSpeaking(false);
+    }
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -93,7 +136,7 @@ export default function Home() {
     }
   }, [activeSection])
   return (
-    <div className="relative isolate min-h-screen bg-black text-white">
+    <div className="relative isolate min-h-screen text-white">
       <div className="relative z-10 px-4 pt-6">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-sky-200 via-cyan-200 to-white drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
@@ -138,6 +181,13 @@ export default function Home() {
                 <p className="text-lg text-gray-300 leading-relaxed">
                   {section.description}
                 </p>
+                <button
+                  onClick={() => playAI(section.description)}
+                  className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500/20 text-sky-200 hover:bg-sky-500/40 transition-colors"
+                >
+                  {isSpeaking ? <Square size={18} /> : <Volume2 size={18} />}
+                  <span>{isSpeaking ? 'Stop' : 'Read aloud'}</span>
+                </button>
               </div>
             </section>
           ))}
