@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import Papa from 'papaparse';
-import fs from 'fs';
-import path from 'path';
 
 interface CountryData {
   country: string;
@@ -12,11 +10,15 @@ interface CountryData {
   product_count: number;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Read the expanded summary data directly from the file system
-    const filePath = path.join(process.cwd(), 'public', 'expanded_summary.csv');
-    const text = fs.readFileSync(filePath, 'utf8');
+    // Fetch CSV from public assets via HTTP for serverless compatibility
+    const csvUrl = new URL('/expanded_summary.csv', request.url);
+    const res = await fetch(csvUrl.toString(), { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('Failed to fetch expanded_summary.csv');
+    }
+    const text = await res.text();
 
     const allRows = Papa.parse(text, {
       header: true,

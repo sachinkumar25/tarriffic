@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import Papa from 'papaparse';
-import fs from 'fs';
-import path from 'path';
 import { NextRequest } from 'next/server';
 
 // Define the structure of the HS4 categories from the data dictionary
@@ -23,34 +21,50 @@ const getCategoryName = (hs2: string, categories: Hs4Categories): string => {
   return `Category ${hs2}`; // Fallback name
 };
 
-
 export async function GET(req: NextRequest) {
   try {
-    const filePath = path.join(process.cwd(), 'public', 'expanded_summary.csv');
-    const dictionaryPath = path.join(process.cwd(), '..', 'data-curator', 'data', 'processed', 'data_dictionary.json');
-    
-    const csvFile = fs.readFileSync(filePath, 'utf8');
-    const dictionaryFile = fs.readFileSync(dictionaryPath, 'utf8');
-    const dataDictionary = JSON.parse(dictionaryFile);
-    const hs4Categories: Hs4Categories = dataDictionary.hs4_categories;
+    // Read CSV and dictionary from public assets via HTTP to ensure compatibility with serverless platforms
+    const csvUrl = new URL('/expanded_summary.csv', req.url);
+    const dictUrl = new URL('/data_dictionary.json', req.url);
 
+    const [csvRes, dictRes] = await Promise.allSettled([
+      fetch(csvUrl.toString(), { cache: 'no-store' }),
+      fetch(dictUrl.toString(), { cache: 'no-store' }),
+    ]);
 
-    const parsedData = Papa.parse(csvFile, {
+    if (csvRes.status !== 'fulfilled' || !csvRes.value.ok) {
+      throw new Error('Failed to fetch expanded_summary.csv');
+    }
+
+    let hs4Categories: Hs4Categories = {};
+    if (dictRes.status === 'fulfilled' && dictRes.value.ok) {
+      try {
+        const dictionaryJson = await dictRes.value.json();
+        hs4Categories = dictionaryJson?.hs4_categories || {};
+      } catch {
+        // Ignore dictionary parsing errors and fall back to generic categories
+        hs4Categories = {};
+      }
+    }
+
+    const csvText = await csvRes.value.text();
+
+    const parsedData = Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
       dynamicTyping: true,
     });
 
-    const rows = parsedData.data;
+    const rows = parsedData.data as Array<Record<string, unknown>>;
 
-    const hs2Map = new Map();
+    const hs2Map = new Map<string, any>();
     let totalValue = 0;
 
     rows.forEach((row: any) => {
       if (row.partner_iso !== 'WLD') { // Exclude 'World' entries for bilateral trade
         const hs4 = row.hs4?.toString();
         if (!hs4) return;
-        
+
         const hs2 = hs4.substring(0, 2);
         const tradeValue = row.trade_value_total || 0;
         totalValue += tradeValue;
@@ -61,8 +75,8 @@ export async function GET(req: NextRequest) {
             name: getCategoryName(hs2, hs4Categories),
             value: 0,
             tariff: 0,
-            children: new Map(),
-            tariffRates: []
+            children: new Map<string, any>(),
+            tariffRates: [] as number[],
           });
         }
 
@@ -70,61 +84,60 @@ export async function GET(req: NextRequest) {
         hs2Entry.value += tradeValue;
         hs2Entry.tariffRates.push(row.simple_average || 0);
 
-        const hs4Map = hs2Entry.children;
+        const hs4Map = hs2Entry.children as Map<string, any>;
         if (!hs4Map.has(hs4)) {
           hs4Map.set(hs4, {
             hs4: hs4,
             name: `HS4 ${hs4}`, // Use HS4 code as placeholder name for clarity
             value: 0,
-            tariff: row.simple_average || 0
+            tariff: row.simple_average || 0,
           });
         }
         hs4Map.get(hs4)!.value += tradeValue;
       }
     });
 
-    const children = Array.from(hs2Map.values()).map(hs2Entry => {
+    const children = Array.from(hs2Map.values()).map((hs2Entry: any) => {
       // Calculate weighted average tariff for HS2
-      hs2Entry.tariff = hs2Entry.tariffRates.reduce((a, b) => a + b, 0) / hs2Entry.tariffRates.length;
+      hs2Entry.tariff = hs2Entry.tariffRates.reduce((a: number, b: number) => a + b, 0) / hs2Entry.tariffRates.length;
       delete hs2Entry.tariffRates;
 
-      hs2Entry.children = Array.from(hs2Entry.children.values());
+      hs2Entry.children = Array.from((hs2Entry.children as Map<string, any>).values());
       return hs2Entry;
     });
 
     // --- Top-N Filtering ---
     const topN = 10;
-    children.sort((a, b) => b.value - a.value);
+    children.sort((a: any, b: any) => b.value - a.value);
 
     const topChildren = children.slice(0, topN);
     const otherChildren = children.slice(topN);
 
     if (otherChildren.length > 0) {
-      const otherValue = otherChildren.reduce((acc, child) => acc + child.value, 0);
-      const weightedTariffSum = otherChildren.reduce((acc, child) => acc + child.value * child.tariff, 0);
-      const otherTariff = weightedTariffSum / otherValue;
+      const otherValue = otherChildren.reduce((acc: number, child: any) => acc + child.value, 0);
+      const weightedTariffSum = otherChildren.reduce((acc: number, child: any) => acc + child.value * child.tariff, 0);
+      const otherTariff = otherValue ? weightedTariffSum / otherValue : 0;
 
       topChildren.push({
         hs2: 'Other',
         name: 'Other',
         value: otherValue,
         tariff: otherTariff,
-        children: []
+        children: [],
       });
     }
 
     // --- Add share_of_total ---
-    const finalChildren = topChildren.map(child => ({
+    const finalChildren = topChildren.map((child: any) => ({
       ...child,
-      share_of_total: (child.value / totalValue) * 100
+      share_of_total: totalValue ? (child.value / totalValue) * 100 : 0,
     }));
 
-
     const hierarchicalData = {
-      from: "USA",
-      to: "World (Bilateral)",
+      from: 'USA',
+      to: 'World (Bilateral)',
       total_value: totalValue,
-      children: finalChildren
+      children: finalChildren,
     };
 
     return NextResponse.json(hierarchicalData);
