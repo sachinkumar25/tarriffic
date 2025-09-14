@@ -152,7 +152,7 @@ export default function Home() {
         <div className="absolute top-8 left-8 flex gap-4">
           <Link
             href="/tariff-info"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
+            className="text-3xl font-semibold text-gray-300 hover:text-white transition-colors"
           >
             Tariff Info
           </Link>
