@@ -299,43 +299,28 @@ export interface TariffDataPoint {
 
 export const getTariffRateHistory = async (): Promise<TariffDataPoint[]> => {
   try {
-    const res = await fetch('/us_tariff_history.csv')
+    const res = await fetch('/us_tariff_history_1821-2025.csv')
     if (!res.ok) {
       throw new Error(`Failed to fetch CSV: ${res.status} ${res.statusText}`)
     }
     const text = await res.text()
 
-    const result = Papa.parse<string[]>(text, {
-      header: false,
+    const result = Papa.parse<{ Year: number; Rate: number }>(text, {
+      header: true,
       skipEmptyLines: true,
+      dynamicTyping: true, // Automatically convert numbers
     })
 
-    const allRows = result.data
+    // The new CSV is simple: Year,Rate. PapaParse with header will create objects.
+    // We need to ensure the keys are correct, let's assume 'Year' and 'Rate'.
+    const processedData = result.data
+      .map(row => ({
+        year: Number(row.Year),
+        rate: Number(row.Rate),
+      }))
+      .filter(d => !isNaN(d.year) && !isNaN(d.rate))
 
-    if (allRows.length < 5) {
-      console.error('CSV data is not in the expected format.')
-      return []
-    }
-
-    // The data from the World Bank CSV has metadata in the first 4 rows.
-    // Row 3 (0-indexed) contains the headers (years).
-    // Row 4 contains the values for the United States.
-    const yearHeaders = allRows[3]
-    const rateValues = allRows[4]
-
-    const data: TariffDataPoint[] = []
-
-    // The first 4 columns are metadata, so we start from the 5th column (index 4).
-    for (let i = 4; i < yearHeaders.length; i++) {
-      const year = parseInt(yearHeaders[i], 10)
-      const rate = parseFloat(rateValues[i])
-
-      if (!isNaN(year) && !isNaN(rate)) {
-        data.push({ year, rate })
-      }
-    }
-
-    return data
+    return processedData as TariffDataPoint[]
   } catch (error) {
     console.error('Error getting tariff rate history:', error)
     return []

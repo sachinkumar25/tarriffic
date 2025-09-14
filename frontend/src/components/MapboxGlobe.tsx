@@ -6,6 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { generateTariffGeoJSON, getAllCountries } from '@/lib/tradeData'
 import CountryFilter from './CountryFilter'
 import { Filter } from 'lucide-react'
+import { formatAnalysis } from '@/lib/utils'
 
 interface FlowData {
   reporter: string;
@@ -42,6 +43,7 @@ export default function MapboxGlobe({
   const [showFilter, setShowFilter] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [isMapReady, setIsMapReady] = useState(false)
+  const listenersAttachedRef = useRef(false)
 
   const fetchAnalysis = useCallback(async (flow: FlowData) => {
     setIsAnalyzing(true)
@@ -69,7 +71,8 @@ export default function MapboxGlobe({
     setSelectedFlow(flow)
     setShowDrawer(true)
     setAnalysis("")
-    await fetchAnalysis(flow)
+    // Fire and forget to avoid any perceived delay in opening
+    fetchAnalysis(flow)
   }, [fetchAnalysis])
 
   const handleRouteClick = useCallback((e: mapboxgl.MapMouseEvent) => {
@@ -106,7 +109,6 @@ export default function MapboxGlobe({
 
   // Helper function to get user-friendly product category name
   const getProductCategoryName = (hs4: string) => {
-    // Map of country codes to their major export categories
     const countryProducts: Record<string, string> = {
       'BRA': 'Agricultural Products & Raw Materials',
       'CHN': 'Electronics & Manufacturing',
@@ -124,11 +126,9 @@ export default function MapboxGlobe({
       'BEL': 'Chemicals & Diamonds',
       'ESP': 'Food Products & Machinery',
     }
-    
     return countryProducts[hs4] || 'Mixed Trade Goods'
   }
 
-  // Helper function to get product description
   const getProductDescription = (hs4: string) => {
     const descriptions: Record<string, string> = {
       'BRA': 'Soybeans, coffee, iron ore, and manufactured goods',
@@ -147,50 +147,7 @@ export default function MapboxGlobe({
       'BEL': 'Chemicals, diamonds, and petroleum products',
       'ESP': 'Olive oil, wine, and machinery',
     }
-    
     return descriptions[hs4] || 'Various imported and exported goods'
-  }
-
-  // Format analysis text with proper styling
-  const formatAnalysis = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim())
-    
-    return lines.map((line, index) => {
-      const trimmedLine = line.trim()
-      
-      // Handle bold headers (text between **)
-      if (trimmedLine.includes('**')) {
-        const formattedLine = trimmedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        return (
-          <div 
-            key={index} 
-            className="font-semibold text-white text-base mb-2"
-            dangerouslySetInnerHTML={{ __html: formattedLine }}
-          />
-        )
-      }
-      
-      // Handle bullet points (lines starting with •)
-      if (trimmedLine.startsWith('•')) {
-        return (
-          <div key={index} className="flex items-start space-x-2 ml-2">
-            <span className="text-blue-400 text-sm mt-1">•</span>
-            <span className="text-white/90 text-sm">{trimmedLine.substring(1).trim()}</span>
-          </div>
-        )
-      }
-      
-      // Handle regular paragraphs
-      if (trimmedLine.length > 0) {
-        return (
-          <p key={index} className="text-white/90 text-sm leading-relaxed">
-            {trimmedLine}
-          </p>
-        )
-      }
-      
-      return null
-    }).filter(Boolean)
   }
 
   // Initialize with top 15 countries on first load
@@ -248,7 +205,7 @@ export default function MapboxGlobe({
     };
   }, [transparentBackground]);
 
-  // Effect for data loading and layer updates
+  // Effect for data loading and layer updates (and attach listeners once layers exist)
   useEffect(() => {
     const map = mapRef.current;
     if (!isMapReady || !map) return;
@@ -259,7 +216,9 @@ export default function MapboxGlobe({
 
       const geojsonData = await generateTariffGeoJSON(selectedCountries);
 
-      if (map.getSource('tariffs-lines')) {
+      const hadLines = !!map.getSource('tariffs-lines')
+
+      if (hadLines) {
         (map.getSource('tariffs-lines') as mapboxgl.GeoJSONSource).setData(geojsonData.lines);
         (map.getSource('tariffs-arrows') as mapboxgl.GeoJSONSource).setData(geojsonData.arrows);
       } else {
@@ -289,6 +248,17 @@ export default function MapboxGlobe({
           paint: { 'text-color': 'black' },
         });
       }
+
+      // Attach listeners once, immediately after layers exist
+      if (!listenersAttachedRef.current && (hadLines || (map.getLayer('tariff-lines') && map.getLayer('tariff-arrows')))) {
+        map.on('click', 'tariff-lines', handleRouteClick);
+        map.on('click', 'tariff-arrows', handleRouteClick);
+        map.on('mouseenter', 'tariff-lines', handleMouseEnter);
+        map.on('mouseenter', 'tariff-arrows', handleMouseEnter);
+        map.on('mouseleave', 'tariff-lines', handleMouseLeave);
+        map.on('mouseleave', 'tariff-arrows', handleMouseLeave);
+        listenersAttachedRef.current = true;
+      }
       
       setLoading(false);
       setDataLoaded(true);
@@ -297,29 +267,11 @@ export default function MapboxGlobe({
     if (selectedCountries.length > 0) {
       updateMapData();
     }
-  }, [isMapReady, selectedCountries]);
-
-  // Effect for attaching event listeners
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!isMapReady || !dataLoaded || !map) return;
-
-    map.on('click', 'tariff-lines', handleRouteClick);
-    map.on('click', 'tariff-arrows', handleRouteClick);
-    map.on('mouseenter', 'tariff-lines', handleMouseEnter);
-    map.on('mouseenter', 'tariff-arrows', handleMouseEnter);
-    map.on('mouseleave', 'tariff-lines', handleMouseLeave);
-    map.on('mouseleave', 'tariff-arrows', handleMouseLeave);
 
     return () => {
-      map.off('click', 'tariff-lines', handleRouteClick);
-      map.off('click', 'tariff-arrows', handleRouteClick);
-      map.off('mouseenter', 'tariff-lines', handleMouseEnter);
-      map.off('mouseenter', 'tariff-arrows', handleMouseEnter);
-      map.off('mouseleave', 'tariff-lines', handleMouseLeave);
-      map.off('mouseleave', 'tariff-arrows', handleMouseLeave);
-    };
-  }, [isMapReady, dataLoaded, handleRouteClick, handleMouseEnter, handleMouseLeave]);
+      // Do not detach listeners here to keep them stable across data refreshes
+    }
+  }, [isMapReady, selectedCountries, handleRouteClick, handleMouseEnter, handleMouseLeave]);
 
   return (
     <div className="w-full h-full relative">

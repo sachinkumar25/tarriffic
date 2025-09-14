@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       .eq('reporter', flow.reporter)
       .eq('partner', flow.partner)
       .eq('hs4', flow.hs4)
-      .eq('year', flow.year)
       .single();
 
     if (error || !data) {
