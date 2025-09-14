@@ -49,8 +49,9 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
   
   data.children.forEach((hs2: any) => {
     const hs2_id = hs2.hs2.toString();
+    const hs2Description = getHSDescription(hs2.hs2, hs2.name);
     ids.push(hs2_id);
-    labels.push(`<b>${wrapText(hs2.name)}</b>`);
+    labels.push(`<b>${wrapText(hs2Description)}</b>`);
     parents.push(rootId);
     values.push(hs2.value);
     customdata.push({
@@ -94,9 +95,9 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
       }
     },
     hovertemplate: '<b>%{label}</b><br>Trade Value: %{value:$,.2s}<br>Tariff: %{customdata.tariff:.2f}%<br>Share of Total: %{customdata.share_of_total:.2f}%<extra></extra>',
-    outsidetextfont: { size: 16, family: 'Inter, sans-serif' },
+    outsidetextfont: { size: 16, family: 'Inter, sans-serif', color: '#ffffff' },
     leaf: { opacity: 0.8 },
-    textfont: { size: 14, family: 'Inter, sans-serif' }
+    textfont: { size: 14, family: 'Inter, sans-serif', color: '#ffffff' }
   }];
 
   const layout = {
@@ -120,6 +121,10 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
       layout={layout}
       style={{ width: '100%', height: '100%' }}
       useResizeHandler
+      config={{
+        displayModeBar: true,
+        responsive: true,
+      }}
       onClick={(e: any) => {
         const point = e.points[0];
         const id = point.id;

@@ -4,32 +4,21 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AnalysisSheet from './AnalysisSheet';
+import ChartContainer from './ChartContainer';
 
 const SankeyChart = dynamic(() => import('./charts/SankeyChart'), { 
-  ssr: false, 
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
-    </div>
-  ) 
+  ssr: false,
+  loading: () => <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
 });
 
 const TreemapChart = dynamic(() => import('./charts/TreemapChart'), { 
-  ssr: false, 
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
-    </div>
-  ) 
+  ssr: false,
+  loading: () => <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
 });
 
 const SunburstChart = dynamic(() => import('./charts/SunburstChart'), { 
   ssr: false, 
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
-    </div>
-  ) 
+  loading: () => <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
 });
 
 interface ProductData {
@@ -61,8 +50,8 @@ const SectorBreakdown = () => {
         }
         const jsonData = await res.json();
         setData(jsonData);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setIsLoading(false);
       }
@@ -88,48 +77,14 @@ const SectorBreakdown = () => {
       }
       const result = await res.json();
       setAnalysis(result.analysis);
-    } catch (err: any) {
-      setAnalysis(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setAnalysis(`Error: ${err instanceof Error ? err.message : 'An error occurred'}`);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-400 mx-auto mb-4"></div>
-            <p className="text-gray-300 text-lg">Loading trade data...</p>
-          </div>
-        </div>
-      );
-    }
-    
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center max-w-md">
-            <div className="text-red-400 text-2xl mb-2">⚠️</div>
-            <p className="text-red-300 text-lg mb-2">Error loading data</p>
-            <p className="text-gray-400 text-sm">{error}</p>
-          </div>
-        </div>
-      );
-    }
-    
-    if (!data) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <p className="text-gray-300 text-lg">No data available</p>
-            <p className="text-gray-400 text-sm mt-2">Please try refreshing the page</p>
-          </div>
-        </div>
-      );
-    }
-
+  const renderChart = () => {
     switch (view) {
       case "sankey":
         return <SankeyChart data={data} />;
@@ -146,7 +101,7 @@ const SectorBreakdown = () => {
     <div className="w-full h-full flex flex-col">
       {/* Header with tabs */}
       <div className="mb-6">
-        <Tabs value={view} onValueChange={(value) => setView(value as any)} className="w-full">
+        <Tabs value={view} onValueChange={(value) => setView(value as "sankey" | "treemap" | "sunburst")} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-white/5 backdrop-blur-sm rounded-lg p-1 border border-white/10">
             <TabsTrigger 
               value="sankey" 
@@ -170,10 +125,12 @@ const SectorBreakdown = () => {
         </Tabs>
       </div>
 
-      {/* Chart container with proper bounds */}
+      {/* Chart container */}
       <div className="flex-1 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 shadow-2xl overflow-hidden">
-        <div className="w-full h-full p-6 flex items-center justify-center">
-          {renderContent()}
+        <div className="w-full h-full p-6">
+          <ChartContainer isLoading={isLoading} error={error} data={data}>
+            {renderChart()}
+          </ChartContainer>
         </div>
       </div>
 

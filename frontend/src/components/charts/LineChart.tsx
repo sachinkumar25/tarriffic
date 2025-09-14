@@ -35,26 +35,32 @@ const LineChart = () => {
       y: data.map(d => d.rate),
       type: 'scatter' as const,
       mode: 'lines+markers' as const,
-      marker: { color: '#8884d8' },
-      line: { color: '#8884d8' },
+      marker: { color: '#3b82f6' },
+      line: { color: '#3b82f6' },
       name: 'Avg. Tariff Rate',
     },
   ]
 
   const layout = {
-    title: { text: 'US Average Tariff Rate (1990-2022)' },
+    title: { 
+      text: 'US Average Tariff Rate (1990-2022)',
+      font: { color: '#ffffff', size: 16 }
+    },
     xaxis: {
-      title: { text: 'Year' },
-      gridcolor: '#e0e0e0',
+      title: { text: 'Year', font: { color: '#ffffff' } },
+      gridcolor: '#374151',
+      tickfont: { color: '#ffffff' }
     },
     yaxis: {
-      title: { text: 'Tariff Rate (%)' },
-      gridcolor: '#e0e0e0',
+      title: { text: 'Tariff Rate (%)', font: { color: '#ffffff' } },
+      gridcolor: '#374151',
+      tickfont: { color: '#ffffff' }
     },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     font: {
-      color: '#333',
+      color: '#ffffff',
+      family: 'Inter, sans-serif'
     },
   }
 

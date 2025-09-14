@@ -14,6 +14,7 @@ body {
 }
 
 /* Hardware acceleration for smooth animations */
+/*
 * {
   -webkit-transform: translateZ(0);
   -moz-transform: translateZ(0);
@@ -21,6 +22,7 @@ body {
   -o-transform: translateZ(0);
   transform: translateZ(0);
 }
+*/
 
 /* Optimize scrolling performance */
 .scroll-container {

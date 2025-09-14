@@ -53,19 +53,17 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
     tariff: 0,
     share_of_total: 100
   }];
-  const texttemplates: string[] = ['<b>%{label}</b><br>%{value}'];
-
   data.children.forEach((hs2: any) => {
     const hs2_id = hs2.hs2.toString();
+    const hs2Description = getHSDescription(hs2.hs2, hs2.name);
     ids.push(hs2_id);
-    labels.push(`<b>${wrapText(hs2.name)}</b>`);
+    labels.push(`<b>${wrapText(hs2Description)}</b>`);
     parents.push(rootId);
     values.push(hs2.value);
     customdata.push({
       tariff: hs2.tariff,
       share_of_total: (hs2.value / data.total_value) * 100
     });
-    texttemplates.push('<b>%{label}</b><br>%{value}');
 
 
     hs2.children.forEach((hs4: any) => {
@@ -79,7 +77,6 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
         tariff: hs4.tariff,
         share_of_total: (hs4.value / data.total_value) * 100
       });
-      texttemplates.push('%{label}<br>%{value}');
     });
   });
 
@@ -91,11 +88,11 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
     values: values,
     customdata: customdata,
     textinfo: 'label',
-    texttemplate: texttemplates,
     textposition: 'middle center',
     textfont: {
       family: 'Inter, sans-serif',
       size: 14,
+      color: '#ffffff',
     },
     marker: {
       colors: customdata.map(d => d.tariff),
@@ -134,6 +131,10 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ data, onProductClick }) => 
       layout={layout}
       style={{ width: '100%', height: '100%' }}
       useResizeHandler
+      config={{
+        displayModeBar: true,
+        responsive: true,
+      }}
       onClick={(e: any) => {
         const point = e.points[0];
         const id = point.id;
