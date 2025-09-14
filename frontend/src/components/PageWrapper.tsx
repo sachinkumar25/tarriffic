@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from "next/navigation";
-import BackButton from "@/components/BackButton";
+import HomeButton from "@/components/HomeButton";
 import SupplyChainBackdrop from "@/components/SupplyChainBackdrop";
 
 export default function PageWrapper({
@@ -14,7 +14,7 @@ export default function PageWrapper({
 
   return (
     <>
-      {!isHomePage && <BackButton />}
+      {!isHomePage && <HomeButton />}
       {isHomePage ? <SupplyChainBackdrop /> : <SupplyChainBackdrop className="opacity-25" />}
       {children}
     </>

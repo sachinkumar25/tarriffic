@@ -76,13 +76,14 @@ export default function Home() {
     })
 
     return () => {
-      sectionRefs.current.forEach((ref) => {
+      const currentRefs = sectionRefs.current;
+      currentRefs.forEach((ref) => {
         if (ref) {
           observer.unobserve(ref)
         }
       })
     }
-  }, [])
+  }, [activeSection])
   return (
     <div className="relative isolate min-h-screen bg-black text-white">
       <div className="relative z-10 px-4 pt-6">
@@ -93,20 +94,6 @@ export default function Home() {
           <p className="mt-4 text-xl md:text-2xl text-sky-200/90 font-medium tracking-wide">
             An Interactive Guide to U.S. Tariffs
           </p>
-        </div>
-        <div className="absolute top-8 right-8 flex gap-4">
-          <Link
-            href="/basket"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
-          >
-            Consumer Impact
-          </Link>
-          <Link
-            href="/tariff-info"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
-          >
-            Tariff Info
-          </Link>
         </div>
       </div>
 
