@@ -82,7 +82,6 @@ const BasketImpact: React.FC = () => {
   const [tariffShift, setTariffShift] = useState(0);
   const [totalCost, setTotalCost] = useState(0);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [visibleItems, setVisibleItems] = useState<Set<string>>(new Set());
 
   // Calculate total cost whenever tariff shift changes
   useEffect(() => {
@@ -92,18 +91,6 @@ const BasketImpact: React.FC = () => {
       return sum + adjustedPrice;
     }, 0);
     setTotalCost(total);
-  }, [tariffShift]);
-
-  // Show items progressively based on tariff shift
-  useEffect(() => {
-    const newVisibleItems = new Set<string>();
-    const itemsToShow = Math.min(Math.floor((tariffShift / 20) * basketItems.length) + 1, basketItems.length);
-    
-    for (let i = 0; i < itemsToShow; i++) {
-      newVisibleItems.add(basketItems[i].id);
-    }
-    
-    setVisibleItems(newVisibleItems);
   }, [tariffShift]);
 
   // Get color class based on tariff level
@@ -223,7 +210,6 @@ const BasketImpact: React.FC = () => {
               const adjustedTariff = item.tariff + tariffShift;
               const adjustedPrice = getAdjustedPrice(item);
               const colorClass = getTariffColor(item.tariff);
-              const isVisible = visibleItems.has(item.id);
               const row = Math.floor(index / 4);
               const col = index % 4;
               
@@ -236,8 +222,6 @@ const BasketImpact: React.FC = () => {
                   style={{
                     gridRow: row + 1,
                     gridColumn: col + 1,
-                    transform: `translateY(${isVisible ? '0' : '100px'})`,
-                    opacity: isVisible ? 1 : 0,
                     transition: 'all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
                     transitionDelay: `${index * 0.1}s`
                   }}
@@ -290,11 +274,11 @@ const BasketImpact: React.FC = () => {
         <div className="text-center mt-4">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/30">
             <span className="text-sm font-medium text-blue-300">
-              🛒 {visibleItems.size} of {basketItems.length} items in basket
+              🛒 {basketItems.length} of {basketItems.length} items in basket
             </span>
           </div>
           <p className="text-sm text-gray-400 mt-2">
-            Items appear as tariffs increase • Hover for details
+            Prices update as tariffs change • Hover for details
           </p>
         </div>
       </div>
@@ -306,7 +290,7 @@ const BasketImpact: React.FC = () => {
             🎛️ Simulate Tariff Increase: +{tariffShift.toFixed(1)}%
           </label>
           <p className="text-sm text-gray-300 mb-4">
-            Move the slider to see items &ldquo;drop&rdquo; into the basket as tariffs increase
+            Move the slider to see how prices change for each product.
           </p>
           <div className="flex items-center justify-center space-x-8 text-sm text-gray-300">
             <span className="flex items-center gap-2">
@@ -357,7 +341,7 @@ const BasketImpact: React.FC = () => {
                 That&apos;s <span className="font-bold">{formatCurrency((totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0)) * 12)}</span> per year in additional costs
               </div>
               <div className="mt-3 text-xs text-red-400">
-                💡 {visibleItems.size} items currently affected by tariffs
+                💡 All {basketItems.length} items are affected by tariffs
               </div>
             </div>
           </div>

@@ -5,6 +5,8 @@ import Link from "next/link"
 import MapboxGlobe from "@/components/MapboxGlobe"
 import HeatmapThumb from "@/components/HeatmapThumb"
 import ChartThumb from "@/components/ChartThumb"
+import BasketThumb from "@/components/BasketThumb"
+import GlobeThumb from "@/components/GlobeThumb"
 import { cn } from "@/lib/utils"
 
 const sections = [
@@ -21,22 +23,28 @@ const sections = [
       "This globe visualizes the United States' vast network of trade relationships. Each line represents a flow of goods between the U.S. and its global partners. These connections are the lifeblood of the American economy. Click the globe to explore an interactive view of these trade routes, showing the products Americans export and import, and the tariffs involved.",
   },
   {
-    id: "heatmaps",
-    title: "Tariff Strategy at a Glance",
+    id: "us-rates",
+    title: "U.S. Tariff Rates",
     description:
-      "Tariffs are not applied uniformly; they are a strategic tool. The heatmap on the left shows which product categories face the highest taxes, a direct look at the industries the U.S. government protects most. On the right, a global view illustrates all countries and their trade flows in context. Click the world heatmap to explore these economic strategies in detail.",
+      "Tariffs are not applied uniformly; they are a strategic tool. This chart shows which product categories face the highest taxes, giving a direct look at the industries the U.S. government aims to protect most. High tariffs on certain goods can shield domestic industries from foreign competition but may also lead to higher prices for consumers. Click to explore these economic strategies in detail.",
+  },
+  {
+    id: "global-flows",
+    title: "Global Trade Flows",
+    description:
+      "Understanding global trade is key to understanding the U.S. economy. This heatmap illustrates the intricate network of trade flows between countries, highlighting the most significant trade relationships. Disruptions in these flows, whether from tariffs or other global events, can have far-reaching consequences, affecting supply chains, market stability, and consumer prices both in the U.S. and abroad. Click the map to see the full picture.",
   },
   {
     id: "sectors",
-    title: "Protecting Industries",
+    title: "Protecting U.S. Industries",
     description:
-      "From steel and automobiles to agriculture, governments use tariffs to shield key industries from foreign competition. This chart breaks down which sectors receive the most protection. While these policies can support domestic jobs, they often result in higher prices and fewer choices for consumers. Click the chart for a detailed breakdown.",
+      "The U.S. government uses tariffs to shield key domestic industries like steel, automobiles, and agriculture from foreign competition. This chart breaks down which sectors receive the most protection. While these policies can support American jobs, they often result in higher prices and fewer choices for U.S. consumers. Click the chart for a detailed breakdown of which industries are most protected.",
   },
   {
     id: "trends",
-    title: "How Trade Policies Shape the Economy",
+    title: "How Tariffs Affect Your Shopping Basket",
     description:
-      "A change in a trade policy can create ripples across the globe. This chart shows how trade volumes respond to new tariffs. A sudden hike can trigger retaliation from other nations, disrupting supply chains for businesses and affecting the global economy. Click the chart to interact with the data and see how these critical economic trends unfold.",
+      "Tariffs aren't just abstract economic policy; they directly impact the wallets of American families. This interactive tool demonstrates how taxes on imported goods like food, clothing, and electronics translate into higher monthly household costs for you. Click to simulate tariff changes and see firsthand how these policies affect the prices of items in your shopping basket.",
   },
 ]
 
@@ -89,19 +97,16 @@ export default function Home() {
       <div className="relative z-10 px-4 pt-6">
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-sky-200 via-cyan-200 to-white drop-shadow-[0_2px_12px_rgba(56,189,248,0.15)]">
-            Tarrific
+            Tributum
           </h1>
+          <p className="mt-2 text-sm text-sky-200/70 tracking-widest">
+            (tri-bu-tum) <span className="italic">noun</span> | Latin: tax, tribute
+          </p>
           <p className="mt-4 text-xl md:text-2xl text-sky-200/90 font-medium tracking-wide">
             An Interactive Guide to U.S. Tariffs
           </p>
         </div>
-        <div className="absolute top-8 right-8 flex gap-4">
-          <Link
-            href="/basket"
-            className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
-          >
-            Consumer Impact
-          </Link>
+        <div className="absolute top-8 left-8 flex gap-4">
           <Link
             href="/tariff-info"
             className="text-lg font-semibold text-gray-300 hover:text-white transition-colors"
@@ -151,9 +156,10 @@ export default function Home() {
               )}
             >
               <div className="text-center">
-                <p className="text-2xl font-bold text-gray-400">
-                  Scroll down to begin
+                <p className="text-2xl font-bold text-gray-400 animate-pulse">
+                  Scroll to explore
                 </p>
+                <div className="mt-4 text-4xl animate-bounce">👇</div>
               </div>
             </div>
 
@@ -184,40 +190,43 @@ export default function Home() {
                 href="/tariff-trends"
                 className="flex flex-col items-center gap-2"
               >
-                <div className="w-[200px] aspect-square">
+                <div className="w-[240px] aspect-square">
                   <ChartThumb
                     variant="line"
                     className="h-full w-full rounded-2xl"
                   />
                 </div>
                 <p className="text-lg font-semibold text-gray-200">
-                  U.S. Tariff Rates
-                </p>
-              </Link>
-
-              {/* World Heatmap on the right */}
-              <Link
-                href="/heatmap"
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="w-[200px] aspect-square">
-                  <HeatmapThumb
-                    variant="world"
-                    className="h-full w-full rounded-2xl"
-                  />
-                </div>
-                <p className="text-lg font-semibold text-gray-200">
-                  Global Trade Flows
+                  Explore U.S. Tariff Rates
                 </p>
               </Link>
             </div>
+            
+            <Link
+              href="/heatmap"
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                activeSection === 3
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              )}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-[240px] aspect-square">
+                  <GlobeThumb className="h-full w-full rounded-2xl" />
+                </div>
+                <p className="text-lg font-semibold text-gray-200">
+                  Explore Global Trade Flows
+                </p>
+              </div>
+            </Link>
 
             {/* Sector Breakdown */}
             <Link
               href="/sectors"
               className={cn(
                 "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-                activeSection === 3
+                activeSection === 4
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               )}
@@ -229,16 +238,16 @@ export default function Home() {
 
             {/* Volume Trends */}
             <Link
-              href="#"
+              href="/basket"
               className={cn(
                 "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-                activeSection === 4
+                activeSection === 5
                   ? "opacity-100"
                   : "opacity-0 pointer-events-none"
               )}
             >
-              <div className="w-[480px] h-[270px]">
-                <ChartThumb variant="line" className="h-full w-full" />
+              <div className="w-[300px] h-[300px]">
+                <BasketThumb className="h-full w-full" />
               </div>
             </Link>
           </div>
