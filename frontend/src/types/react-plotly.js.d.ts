@@ -1,14 +1,17 @@
 declare module 'react-plotly.js' {
-  import * as React from 'react';
-  import { PlotParams, Data, Layout } from 'plotly.js';
+    import * as Plotly from 'plotly.js';
+    import { Component } from 'react';
 
-  interface PlotProps extends Partial<PlotParams> {
-    data: Data[];
-    layout: Partial<Layout>;
-    style?: React.CSSProperties;
-    useResizeHandler?: boolean;
-  }
+    export interface PlotProps {
+        data: Plotly.Data[];
+        layout: Partial<Plotly.Layout>;
+        config?: Partial<Plotly.Config>;
+        style?: React.CSSProperties;
+        useResizeHandler?: boolean;
+        onClick?: (event: Plotly.PlotMouseEvent) => void;
+        onHover?: (event: Plotly.PlotMouseEvent) => void;
+        // Add any other event handlers you need
+    }
 
-  const Plot: React.ComponentClass<PlotProps>;
-  export default Plot;
+    export default class Plot extends Component<PlotProps> {}
 }

@@ -146,8 +146,7 @@ const BasketImpact: React.FC = () => {
           {tariffShift > 0 ? (
             <div className="flex items-center justify-center gap-2">
               <span className="text-red-400 font-semibold">
-                +{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))} 
-                due to tariffs
+                +{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))} due to tariffs
               </span>
             </div>
           ) : (
@@ -334,8 +333,7 @@ const BasketImpact: React.FC = () => {
                 💰 Tariff Impact Summary
               </div>
               <div className="text-red-200 text-base font-medium mb-2">
-                Average household pays <span className="font-bold text-lg">{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))}</span> 
-                extra per month with {tariffShift.toFixed(1)}% additional tariffs
+                Average household pays <span className="font-bold text-lg">{formatCurrency(totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0))}</span> extra per month with {tariffShift.toFixed(1)}% additional tariffs
               </div>
               <div className="text-red-300 text-sm">
                 That&apos;s <span className="font-bold">{formatCurrency((totalCost - basketItems.reduce((sum, item) => sum + item.basePrice, 0)) * 12)}</span> per year in additional costs

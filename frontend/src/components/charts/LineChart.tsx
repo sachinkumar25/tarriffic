@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import Plot from 'react-plotly.js'
+import type { PlotMouseEvent } from 'plotly.js';
 import {
   getTariffRateHistory,
   TariffDataPoint,
@@ -24,10 +25,10 @@ const LineChart = () => {
     fetchData()
   }, [])
 
-  const handlePointClick = useCallback((event: any) => {
+  const handlePointClick = useCallback((event: PlotMouseEvent) => {
     if (event.points && event.points.length > 0) {
       const point = event.points[0]
-      const pointIndex = point.pointIndex
+      const pointIndex = point.pointNumber
       const clickedDataPoint = data[pointIndex]
       
       if (clickedDataPoint) {
@@ -45,12 +46,12 @@ const LineChart = () => {
     )
   }
 
-  const chartData = [
+  const chartData: Plotly.Data[] = [
     {
       x: data.map(d => d.year),
       y: data.map(d => d.rate),
-      type: 'scatter' as const,
-      mode: 'lines+markers' as const,
+      type: 'scatter',
+      mode: 'lines+markers',
       marker: { 
         color: '#3b82f6',
         size: 8,
@@ -70,7 +71,7 @@ const LineChart = () => {
     },
   ]
 
-  const layout = {
+  const layout: Partial<Plotly.Layout> = {
     title: { 
       text: 'US Historical Tariff Rates (1821-2025)',
       font: { color: '#ffffff', size: 18, family: 'Inter, sans-serif' },
@@ -114,7 +115,7 @@ const LineChart = () => {
     showlegend: false
   }
 
-  const config = {
+  const config: Partial<Plotly.Config> = {
     displayModeBar: false,
     responsive: true
   }
@@ -122,14 +123,12 @@ const LineChart = () => {
   return (
     <div className="h-full w-full relative">
       <Plot
-        {...{
-          data: chartData,
-          layout: layout,
-          config: config,
-          style: { width: '100%', height: '100%' },
-          useResizeHandler: true,
-          onClick: handlePointClick,
-        } as any}
+        data={chartData}
+        layout={layout}
+        config={config}
+        style={{ width: '100%', height: '100%' }}
+        useResizeHandler
+        onClick={handlePointClick}
       />
       
       <HistoricalAnalysisSheet
