@@ -1,7 +1,16 @@
 'use client'
 
-import LineChart from '@/components/charts/LineChart'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
+
+const LineChart = dynamic(() => import('@/components/charts/LineChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center text-gray-400">
+      Loading Chart...
+    </div>
+  )
+})
 
 export default function TariffTrendsPage() {
   return (

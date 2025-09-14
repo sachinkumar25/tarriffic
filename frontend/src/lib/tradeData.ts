@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { supabase, HistoricalAnalysis } from './supabase'
 
 interface ExpandedSummaryRow {
   partner_iso: string
@@ -295,9 +296,53 @@ export const getAllCountries = async (): Promise<CountryTradeData[]> => {
 export interface TariffDataPoint {
   year: number
   rate: number
+  analysis?: string
 }
 
 export const getTariffRateHistory = async (): Promise<TariffDataPoint[]> => {
+  try {
+    // Fetch from Supabase historical_analysis table
+    const { data, error } = await supabase
+      .from('historical_analysis')
+      .select('year, rate, analysis')
+      .order('year', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching from Supabase:', JSON.stringify(error, null, 2))
+      console.error('Supabase error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      // Fallback to CSV if Supabase fails
+      return await getTariffRateHistoryFromCSV()
+    }
+
+    if (!data || data.length === 0) {
+      console.log('No data from Supabase, falling back to CSV')
+      return await getTariffRateHistoryFromCSV()
+    }
+
+    return data.map((row: HistoricalAnalysis) => ({
+      year: row.year,
+      rate: row.rate,
+      analysis: row.analysis
+    }))
+  } catch (error) {
+    console.error('Error getting tariff rate history from Supabase:', error)
+    console.error('Supabase catch error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    })
+    // Fallback to CSV
+    return await getTariffRateHistoryFromCSV()
+  }
+}
+
+// Fallback function to get data from CSV (original implementation)
+const getTariffRateHistoryFromCSV = async (): Promise<TariffDataPoint[]> => {
   try {
     const res = await fetch('/us_tariff_history.csv')
     if (!res.ok) {
@@ -312,16 +357,20 @@ export const getTariffRateHistory = async (): Promise<TariffDataPoint[]> => {
 
     const allRows = result.data
 
-    if (allRows.length < 5) {
-      console.error('CSV data is not in the expected format.')
+    if (allRows.length < 6) {
+      console.error('CSV data is not in the expected format. Expected at least 6 rows, got:', allRows.length)
+      console.error('CSV rows:', allRows)
       return []
     }
 
     // The data from the World Bank CSV has metadata in the first 4 rows.
-    // Row 3 (0-indexed) contains the headers (years).
-    // Row 4 contains the values for the United States.
-    const yearHeaders = allRows[3]
-    const rateValues = allRows[4]
+    // Row 4 (0-indexed) contains the headers (years).
+    // Row 5 contains the values for the United States.
+    const yearHeaders = allRows[4]
+    const rateValues = allRows[5]
+
+    console.log('Year headers:', yearHeaders?.slice(0, 10)) // Log first 10 for debugging
+    console.log('Rate values:', rateValues?.slice(0, 10)) // Log first 10 for debugging
 
     const data: TariffDataPoint[] = []
 
@@ -337,7 +386,7 @@ export const getTariffRateHistory = async (): Promise<TariffDataPoint[]> => {
 
     return data
   } catch (error) {
-    console.error('Error getting tariff rate history:', error)
+    console.error('Error getting tariff rate history from CSV:', error)
     return []
   }
 }
