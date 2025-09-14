@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     return config;
   },
+  // Force a cache bust on Vercel
 };
 
 export default nextConfig;
