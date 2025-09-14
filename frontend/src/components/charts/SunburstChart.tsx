@@ -81,11 +81,16 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
     customdata: customdata,
     marker: {
       colors: customdata.map(d => d.tariff),
-      colorscale: 'RdYlGn',
-      reversescale: true,
+      colorscale: [
+        [0, '#0ea5e9'], // Sky blue for low tariffs
+        [0.5, '#3b82f6'], // Blue for medium tariffs
+        [1, '#1e40af'] // Dark blue for high tariffs
+      ],
       showscale: true,
       colorbar: {
-        title: 'Tariff Burden (%)'
+        title: 'Tariff Burden (%)',
+        titlefont: { color: '#ffffff' },
+        tickfont: { color: '#ffffff' }
       }
     },
     hovertemplate: '<b>%{label}</b><br>Trade Value: %{value:$,.2s}<br>Tariff: %{customdata.tariff:.2f}%<br>Share of Total: %{customdata.share_of_total:.2f}%<extra></extra>',
@@ -95,12 +100,18 @@ const SunburstChart: React.FC<SunburstChartProps> = ({ data, onProductClick }) =
   }];
 
   const layout = {
-    title: 'Hierarchical Trade Data by Sector',
+    title: {
+      text: 'Hierarchical Trade Data by Sector',
+      font: { color: '#ffffff', size: 16 }
+    },
     margin: { l: 0, r: 0, b: 0, t: 40 },
     autosize: true,
     font: {
-      family: 'Inter, sans-serif'
-    }
+      family: 'Inter, sans-serif',
+      color: '#ffffff'
+    },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)'
   };
 
   return (
